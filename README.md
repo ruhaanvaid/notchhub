@@ -98,3 +98,7 @@ Open them from the menu-bar icon › **Settings…**:
 ### Design snapshots
 
 `Tools/snapshots.sh [output-dir]` renders the panel, the HUD in its different states, and the Settings window to PNGs with sample data. Use it to review UI changes without driving the real app.
+
+## License
+
+MIT. See [LICENSE](LICENSE).

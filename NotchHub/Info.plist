@@ -29,6 +29,6 @@
 	<key>NSAppleEventsUsageDescription</key>
 	<string>NotchHub controls Music and Spotify to show what's playing and to play, pause, and skip tracks.</string>
 	<key>NSHumanReadableCopyright</key>
-	<string>Free and open source.</string>
+	<string>Copyright © 2026 Ruhaan Vaid. MIT License.</string>
 </dict>
 </plist>

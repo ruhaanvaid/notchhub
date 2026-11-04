@@ -28,7 +28,7 @@ targets:
         LSMinimumSystemVersion: $(MACOSX_DEPLOYMENT_TARGET)
         LSApplicationCategoryType: public.app-category.utilities
         LSUIElement: true
-        NSHumanReadableCopyright: "Free and open source."
+        NSHumanReadableCopyright: "Copyright © 2026 Ruhaan Vaid. MIT License."
         NSAppleEventsUsageDescription: "NotchHub controls Music and Spotify to show what's playing and to play, pause, and skip tracks."
     configFiles:
       Debug: Config/Signing.xcconfig
