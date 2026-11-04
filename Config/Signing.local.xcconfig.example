@@ -1,0 +1,14 @@
+// Copy to Config/Signing.local.xcconfig (ignored by git) and uncomment ONE option.
+
+// Option A: self-signed code-signing certificate named "NotchHub Local Signing" in the
+// login keychain (Keychain Access › Certificate Assistant › Create a Certificate…,
+// Identity Type: Self-Signed Root, Certificate Type: Code Signing). It does not need to be
+// trusted. Let codesign use the key without prompting (asks for your login password):
+//   security set-key-partition-list -S apple-tool:,apple:,codesign: -s \
+//     -l "NotchHub Local Signing" ~/Library/Keychains/login.keychain-db
+// CODE_SIGN_IDENTITY = NotchHub Local Signing
+
+// Option B: free Apple ID "Personal Team" added in Xcode › Settings › Accounts.
+// CODE_SIGN_STYLE = Automatic
+// CODE_SIGN_IDENTITY = Apple Development
+// DEVELOPMENT_TEAM = YOURTEAMID

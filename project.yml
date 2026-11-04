@@ -1,0 +1,47 @@
+name: NotchHub
+
+options:
+  bundleIdPrefix: com.notchhub
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MACOSX_DEPLOYMENT_TARGET: "14.0"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+
+targets:
+  NotchHub:
+    type: application
+    platform: macOS
+    sources:
+      - path: NotchHub
+    info:
+      path: NotchHub/Info.plist
+      properties:
+        CFBundleDisplayName: NotchHub
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        LSMinimumSystemVersion: $(MACOSX_DEPLOYMENT_TARGET)
+        LSApplicationCategoryType: public.app-category.utilities
+        LSUIElement: true
+        NSHumanReadableCopyright: "Free and open source."
+        NSAppleEventsUsageDescription: "NotchHub controls Music and Spotify to show what's playing and to play, pause, and skip tracks."
+    configFiles:
+      Debug: Config/Signing.xcconfig
+      Release: Config/Signing.xcconfig
+    entitlements:
+      path: NotchHub/NotchHub.entitlements
+      properties:
+        com.apple.security.app-sandbox: false
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.notchhub.app
+        PRODUCT_NAME: NotchHub
+        ENABLE_HARDENED_RUNTIME: NO
+        GENERATE_INFOPLIST_FILE: NO
+        COMBINE_HIDPI_IMAGES: YES
+    scheme: {}
