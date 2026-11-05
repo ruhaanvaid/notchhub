@@ -8,9 +8,30 @@ A free, open-source macOS menu-bar utility that turns the MacBook notch into a D
 - **Works without a notch**: shows a small pill at the top of the main display, either alongside the notch when you use an external monitor or on its own on Macs without one.
 - Hides while a full-screen app covers the screen.
 
-Requires macOS 14 or later. No third-party dependencies.
+Requires macOS 14 or later, on Apple silicon or Intel. No third-party dependencies.
 
-## Build
+## Download and install
+
+1. Download **NotchHub-x.y.z.zip** from the [latest release](https://github.com/ruhaanvaid/notchhub/releases/latest).
+2. Unzip it and drag **NotchHub.app** into your **Applications** folder.
+3. Open NotchHub. The first time, macOS says it can't verify the app. NotchHub is free and isn't notarized by Apple, which needs a paid developer account. To allow it:
+   - Click **Done** (or **OK**) on the warning.
+   - Open **System Settings › Privacy & Security** and scroll down to **Security**.
+   - Next to "NotchHub was blocked…", click **Open Anyway**, confirm with Touch ID or your password, then click **Open**.
+
+   You only need to do this once. If you're comfortable with Terminal, this does the same thing:
+
+   ```sh
+   xattr -dr com.apple.quarantine /Applications/NotchHub.app
+   ```
+
+4. NotchHub has no Dock icon. Look for it in the menu bar, and hover the notch (or the small pill at the top of your main display) to open the panel.
+5. To replace Apple's volume and brightness overlay, NotchHub asks for one permission. Click **Open Settings** in its welcome window and switch NotchHub on, under **Accessibility** (macOS 14–26) or **Device Control and Data Access** (macOS 27 and later). Everything else works without it.
+6. Optional: set up the [Do Not Disturb shortcuts](#do-not-disturb-setup), and turn on **Launch at login** in Settings.
+
+**Updating:** quit NotchHub, replace the app in Applications with the new download, and open it again. Your settings, shelf and permission carry over.
+
+## Build from source
 
 You need Xcode (with command-line tools) and [XcodeGen](https://github.com/yonaskolb/XcodeGen):
 
@@ -24,6 +45,7 @@ Then, from the repository root:
 make run       # generate the project, build Debug, and launch it
 make build     # build only
 make install   # build Release and copy it to /Applications (best for Launch at Login)
+make dist      # universal Release build zipped into build/dist/ for a GitHub release
 make clean     # remove build output and the generated project
 ```
 
