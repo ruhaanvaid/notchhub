@@ -95,6 +95,13 @@ enum Snapshots {
         }
         renderPart("header", HeaderBar(context: context, notchWidth: 185, height: 32))
         renderPart("nowplaying", NowPlayingView(service: nowPlaying))
+        let youtube = NowPlayingService()
+        youtube.setPreview(
+            track: NowPlayingTrack(player: .chrome, title: "Me at the zoo", artist: "", album: "", isPlaying: false,
+                                   trackID: "jNQXAC9IVRw", artworkURL: nil, canControl: false),
+            artwork: art
+        )
+        renderPart("nowplaying-youtube-no-js", NowPlayingView(service: youtube))
         renderPart("volume", VolumeRow(volume: volume))
         renderPart("shelf", ShelfRowView(shelf: shelfStore, isTargeted: false).frame(height: 56))
 

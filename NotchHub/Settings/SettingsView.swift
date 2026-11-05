@@ -51,6 +51,14 @@ struct SettingsView: View {
                     Text("Now playing")
                     Text("Music and Spotify. Uses Automation permission for each app.")
                 }
+                Toggle(isOn: $settings.includeBrowserMedia) {
+                    Text("Include YouTube in browsers")
+                    Text("Safari, Chrome, Arc, Brave and Edge. Shows the video title; see below for controls.")
+                }
+                .disabled(!settings.showNowPlaying)
+                if settings.showNowPlaying && settings.includeBrowserMedia {
+                    YouTubeControlsNote()
+                }
                 Toggle("Volume slider and output picker", isOn: $settings.showAudioControls)
                 Toggle("Keep Awake button", isOn: $settings.showKeepAwake)
                 Toggle("Do Not Disturb button", isOn: $settings.showFocus)
@@ -109,6 +117,21 @@ struct SettingsView: View {
             launchAtLogin = LaunchAtLogin.isEnabled
         }
         needsApproval = LaunchAtLogin.requiresApproval
+    }
+}
+
+/// How to get play state and controls for YouTube, and what it costs.
+private struct YouTubeControlsNote: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("To see whether YouTube is playing and control it, turn on **Allow JavaScript from Apple Events** in your browser:")
+            Text("• Chrome, Arc, Brave, Edge: **View › Developer › Allow JavaScript from Apple Events**")
+            Text("• Safari: **Settings › Advanced › Show features for web developers**, then **Develop › Allow JavaScript from Apple Events**")
+            Text("This lets apps you've allowed to control that browser run scripts in its pages, so only turn it on if you're comfortable with that. NotchHub only runs a short script on YouTube tabs, to read the title and play state and press play, pause, or next.")
+                .foregroundStyle(.secondary)
+        }
+        .font(.caption)
+        .fixedSize(horizontal: false, vertical: true)
     }
 }
 

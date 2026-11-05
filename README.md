@@ -3,7 +3,7 @@
 A free, open-source macOS menu-bar utility that turns the MacBook notch into a Dynamic Island-style control strip.
 
 - **Volume and brightness HUD**: replaces Apple's overlay with one that grows out of the notch, with a level bar and percentage.
-- **Hover panel**: now playing (Music and Spotify), a volume slider, an audio output picker, Keep Awake and Do Not Disturb buttons.
+- **Hover panel**: now playing (Music, Spotify, and YouTube in Safari, Chrome, Arc, Brave or Edge), a volume slider, an audio output picker, Keep Awake and Do Not Disturb buttons.
 - **File shelf**: drag files onto the notch to park them, then drag them back out to drop them anywhere.
 - **Works without a notch**: shows a small pill at the top of the main display, either alongside the notch when you use an external monitor or on its own on Macs without one.
 - Hides while a full-screen app covers the screen.
@@ -74,7 +74,7 @@ You can also use a free Apple ID "Personal Team" instead; see the example file.
 | Permission | Needed for | Where to grant it |
 |---|---|---|
 | Accessibility | Catching the volume and brightness keys so Apple's overlay doesn't appear | System Settings › Privacy & Security › **Accessibility** (macOS 14–26) or **Device Control and Data Access** (macOS 27+) |
-| Automation (Music, Spotify) | Showing and controlling what's playing | macOS asks the first time; change it later under Privacy & Security › Automation |
+| Automation (Music, Spotify, your browser) | Showing and controlling what's playing | macOS asks the first time; change it later under Privacy & Security › Automation |
 
 NotchHub opens an onboarding window on first launch, and **Permissions…** in the menu-bar icon reopens it. Everything except the HUD replacement works without Accessibility.
 
@@ -89,6 +89,15 @@ tccutil reset Accessibility com.notchhub.app
 Then grant it again from the onboarding window.
 
 **If nothing appears at all:** check Screen Time. Under Downtime or App Limits, macOS hides the windows of apps that aren't allowed. Add NotchHub to System Settings › Screen Time › **Always Allowed**.
+
+## YouTube controls
+
+NotchHub finds YouTube and YouTube Music tabs in Safari, Chrome, Arc, Brave and Edge, and shows the video's title and thumbnail. (Firefox can't be scripted this way.) To also see whether a video is playing and control it from the notch, turn on **Allow JavaScript from Apple Events** in your browser:
+
+- **Chrome, Arc, Brave, Edge:** View › Developer › Allow JavaScript from Apple Events
+- **Safari:** Settings › Advanced › Show features for web developers, then Develop › Allow JavaScript from Apple Events
+
+This option lets any app you've allowed to control that browser run scripts in its pages, so only turn it on if you're comfortable with that. NotchHub only runs a short script on YouTube tabs, to read the title and play state and press play, pause or next. You can turn browser detection off in Settings › Panel.
 
 ## Do Not Disturb setup
 
@@ -113,7 +122,7 @@ Open them from the menu-bar icon › **Settings…**:
 
 - **Notch panel**: a borderless, non-activating `NSPanel` above the menu bar. It never takes focus. It ignores the mouse except inside the visible shape, so menu-bar items next to the notch stay clickable. Geometry comes from `NSScreen.safeAreaInsets` and the auxiliary top areas.
 - **HUD**: an active `CGEventTap` on `NSSystemDefined` events (subtype 8). Volume is set through CoreAudio on the default output device. Brightness uses the private DisplayServices framework, loaded with `dlopen` behind a protocol, with a pass-through fallback.
-- **Now playing**: AppleScript to Music and Spotify, run on a background queue and driven by their playback notifications. It polls only while the panel is open or something is playing. MediaRemote isn't used.
+- **Now playing**: AppleScript to Music and Spotify, driven by their playback notifications. YouTube is found by listing browser tabs; with JavaScript from Apple Events on, a page script reads `navigator.mediaSession` and the `<video>` element. Scripts run on a background queue, and polling happens only while the panel is open or something is playing. MediaRemote isn't used.
 - **Keep Awake**: an `IOPMAssertion` that prevents display sleep. A cyan dot beside the notch shows while it's on.
 - **Shelf**: stores bookmarks, not copies, in `~/Library/Application Support/NotchHub/shelf.json`. Moved files are followed; deleted or trashed ones are dropped.
 

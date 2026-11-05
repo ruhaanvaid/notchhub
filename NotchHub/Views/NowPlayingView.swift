@@ -3,6 +3,8 @@ import SwiftUI
 /// One row: artwork with a soft glow in its own colour, title and artist, transport controls.
 struct NowPlayingView: View {
     let service: NowPlayingService
+    /// Opens Settings, which explains how to enable YouTube controls.
+    var openSettings: () -> Void = {}
 
     var body: some View {
         HStack(spacing: 12) {
@@ -16,7 +18,19 @@ struct NowPlayingView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            if let track = service.track {
+            if let track = service.track, !track.canControl {
+                // YouTube without "Allow JavaScript from Apple Events": title only.
+                Button(action: openSettings) {
+                    Text("Enable controls")
+                        .font(NotchStyle.captionFont)
+                        .foregroundStyle(NotchStyle.primary)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(NotchStyle.fillStrong, in: Capsule())
+                }
+                .buttonStyle(.plain)
+                .help("Shows how to let NotchHub see play state and control YouTube")
+            } else if let track = service.track {
                 HStack(spacing: 6) {
                     TransportButton(symbol: "backward.fill", size: 13, action: service.previousTrack)
                     TransportButton(
@@ -41,7 +55,7 @@ struct NowPlayingView: View {
     @ViewBuilder
     private var subtitle: some View {
         if let track = service.track {
-            Text(track.artist.isEmpty ? track.player.displayName : track.artist)
+            Text(track.subtitle)
                 .font(NotchStyle.bodyFont)
                 .foregroundStyle(NotchStyle.secondary)
                 .lineLimit(1)

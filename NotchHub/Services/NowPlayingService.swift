@@ -4,11 +4,22 @@ import Observation
 enum MediaPlayer: String, CaseIterable, Sendable {
     case music
     case spotify
+    // Browsers, for YouTube and YouTube Music (see BrowserMedia).
+    case safari
+    case chrome
+    case arc
+    case brave
+    case edge
 
     var bundleIdentifier: String {
         switch self {
         case .music: return "com.apple.Music"
         case .spotify: return "com.spotify.client"
+        case .safari: return "com.apple.Safari"
+        case .chrome: return "com.google.Chrome"
+        case .arc: return "company.thebrowser.Browser"
+        case .brave: return "com.brave.Browser"
+        case .edge: return "com.microsoft.edgemac"
         }
     }
 
@@ -16,14 +27,28 @@ enum MediaPlayer: String, CaseIterable, Sendable {
         switch self {
         case .music: return "Music"
         case .spotify: return "Spotify"
+        case .safari: return "Safari"
+        case .chrome: return "Google Chrome"
+        case .arc: return "Arc"
+        case .brave: return "Brave"
+        case .edge: return "Microsoft Edge"
         }
     }
 
-    /// Distributed notification each app posts when playback changes. No permission needed.
-    var playbackNotification: Notification.Name {
+    var isBrowser: Bool {
+        switch self {
+        case .music, .spotify: return false
+        default: return true
+        }
+    }
+
+    /// Distributed notification the app posts when playback changes (no permission needed).
+    /// Browsers don't post one, so they're only seen by polling.
+    var playbackNotification: Notification.Name? {
         switch self {
         case .music: return Notification.Name("com.apple.Music.playerInfo")
         case .spotify: return Notification.Name("com.spotify.client.PlaybackStateChanged")
+        default: return nil
         }
     }
 
@@ -38,16 +63,28 @@ struct NowPlayingTrack: Equatable {
     var artist: String
     var album: String
     var isPlaying: Bool
-    /// Music persistent ID or Spotify track ID; used to know when to refetch artwork.
+    /// Music persistent ID, Spotify track ID, or YouTube video ID; decides when to refetch artwork.
     var trackID: String
     var artworkURL: URL?
+    /// The browser tab playing it, for YouTube.
+    var tab: BrowserTab? = nil
+    /// False for YouTube when the browser doesn't allow JavaScript from Apple Events: the title
+    /// is known, but not the play state, and there are no controls.
+    var canControl: Bool = true
+
+    /// Second line: the artist/channel, or where it's playing.
+    var subtitle: String {
+        if !artist.isEmpty { return artist }
+        return player.isBrowser ? "YouTube · \(player.displayName)" : player.displayName
+    }
 }
 
-/// What's playing in Music or Spotify, via AppleScript. Avoids the MediaRemote private
-/// framework, which recent macOS versions block for third-party apps.
+/// What's playing in Music, Spotify, or YouTube in a browser, via AppleScript. Avoids the
+/// MediaRemote private framework, which recent macOS versions block for third-party apps.
 ///
-/// Updates come from the players' distributed notifications. As a fallback it also polls,
-/// but only while the panel is open or something is playing.
+/// Music and Spotify updates come from their distributed notifications. Browsers have none,
+/// so they (and everything, as a fallback) are polled, but only while the panel is open or
+/// something is playing.
 @Observable
 @MainActor
 final class NowPlayingService {
@@ -76,8 +113,9 @@ final class NowPlayingService {
     func start() {
         let distributed = DistributedNotificationCenter.default()
         for player in MediaPlayer.allCases {
+            guard let name = player.playbackNotification else { continue }
             observers.append(distributed.addObserver(
-                forName: player.playbackNotification, object: nil, queue: .main
+                forName: name, object: nil, queue: .main
             ) { [weak self] _ in
                 MainActor.assumeIsolated {
                     self?.lastActivePlayer = player
@@ -126,18 +164,30 @@ final class NowPlayingService {
 
     // MARK: - Controls
 
-    func playPause() { send("playpause") }
-    func nextTrack() { send("next track") }
-    func previousTrack() { send("previous track") }
+    func playPause() { send(.playPause) }
+    func nextTrack() { send(.next) }
+    func previousTrack() { send(.previous) }
 
     func openAutomationSettings() {
         let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Automation")!
         NSWorkspace.shared.open(url)
     }
 
-    private func send(_ command: String) {
-        guard let player = track?.player, player.isRunning else { return }
-        let source = "tell application id \"\(player.bundleIdentifier)\" to \(command)"
+    private func send(_ command: BrowserMedia.Command) {
+        guard let track, track.canControl, track.player.isRunning else { return }
+        let source: String
+        if track.player.isBrowser {
+            guard let tab = track.tab else { return }
+            source = BrowserMedia.controlScript(command, browser: track.player, tab: tab)
+        } else {
+            let verb: String
+            switch command {
+            case .playPause: verb = "playpause"
+            case .next: verb = "next track"
+            case .previous: verb = "previous track"
+            }
+            source = "tell application id \"\(track.player.bundleIdentifier)\" to \(verb)"
+        }
         Task {
             _ = await runner.run(source)
             try? await Task.sleep(for: .milliseconds(250))
@@ -175,10 +225,15 @@ final class NowPlayingService {
         var denied: MediaPlayer?
 
         // Only talk to players that are already running: a `tell` would launch them.
+        let includeBrowsers = AppSettings.shared.includeBrowserMedia
         for player in MediaPlayer.allCases where player.isRunning {
-            switch await runner.run(Self.stateScript(for: player)) {
+            if player.isBrowser, !includeBrowsers { continue }
+            let script = player.isBrowser ? BrowserMedia.queryScript(for: player) : Self.stateScript(for: player)
+            switch await runner.run(script) {
             case let .success(string, _):
-                if let track = Self.parseState(string, player: player) {
+                if player.isBrowser {
+                    candidates += BrowserMedia.parse(string, browser: player)
+                } else if let track = Self.parseState(string, player: player) {
                     candidates.append(track)
                 }
             case let .failure(code, _):
@@ -196,17 +251,21 @@ final class NowPlayingService {
         updatePolling()
     }
 
-    /// Prefers a playing track; if both are playing, the player that changed last.
+    /// Picks what to show. In order of preference: something playing (the player that changed
+    /// last, if several are), what's already shown, sources with a known play state, then
+    /// Music/Spotify over a browser tab.
     private func choose(from candidates: [NowPlayingTrack]) -> NowPlayingTrack? {
-        let playing = candidates.filter(\.isPlaying)
-        if playing.count > 1, let last = lastActivePlayer, let match = playing.first(where: { $0.player == last }) {
-            return match
+        let current = track
+        func score(_ t: NowPlayingTrack) -> (Int, Int, Int, Int, Int) {
+            (
+                t.isPlaying ? 1 : 0,
+                t.isPlaying && t.player == lastActivePlayer ? 1 : 0,
+                t.player == current?.player && t.trackID == current?.trackID ? 1 : 0,
+                t.canControl ? 1 : 0,
+                t.player.isBrowser ? 0 : 1
+            )
         }
-        if let first = playing.first { return first }
-        if let current = track?.player, let match = candidates.first(where: { $0.player == current }) {
-            return match
-        }
-        return candidates.first
+        return candidates.max { score($0) < score($1) }
     }
 
     private func updatePolling() {
@@ -239,7 +298,8 @@ final class NowPlayingService {
             if case let .success(_, data) = await runner.run(Self.musicArtworkScript), let data {
                 image = NSImage(data: data)
             }
-        case .spotify:
+        default:
+            // Spotify and YouTube give an artwork URL.
             if let url = track.artworkURL,
                let (data, _) = try? await URLSession.shared.data(from: url) {
                 image = NSImage(data: data)

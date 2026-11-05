@@ -16,6 +16,8 @@ final class AppSettings {
 
     // Panel sections
     var showNowPlaying: Bool { didSet { store(showNowPlaying, Key.showNowPlaying) } }
+    /// Also look for YouTube in Safari and Chromium browsers.
+    var includeBrowserMedia: Bool { didSet { store(includeBrowserMedia, Key.includeBrowserMedia) } }
     var showAudioControls: Bool { didSet { store(showAudioControls, Key.showAudioControls) } }
     var showKeepAwake: Bool { didSet { store(showKeepAwake, Key.showKeepAwake) } }
     var showFocus: Bool { didSet { store(showFocus, Key.showFocus) } }
@@ -34,6 +36,7 @@ final class AppSettings {
         static let replaceBrightnessHUD = "replaceBrightnessHUD"
         static let hudDuration = "hudDuration"
         static let showNowPlaying = "showNowPlaying"
+        static let includeBrowserMedia = "includeBrowserMedia"
         static let showAudioControls = "showAudioControls"
         static let showKeepAwake = "showKeepAwake"
         static let showFocus = "showFocus"
@@ -49,6 +52,7 @@ final class AppSettings {
             Key.replaceBrightnessHUD: true,
             Key.hudDuration: 1.5,
             Key.showNowPlaying: true,
+            Key.includeBrowserMedia: true,
             Key.showAudioControls: true,
             Key.showKeepAwake: true,
             Key.showFocus: true,
@@ -61,6 +65,7 @@ final class AppSettings {
         hudDuration = min(max(defaults.double(forKey: Key.hudDuration), Self.hudDurationRange.lowerBound),
                           Self.hudDurationRange.upperBound)
         showNowPlaying = defaults.bool(forKey: Key.showNowPlaying)
+        includeBrowserMedia = defaults.bool(forKey: Key.includeBrowserMedia)
         showAudioControls = defaults.bool(forKey: Key.showAudioControls)
         showKeepAwake = defaults.bool(forKey: Key.showKeepAwake)
         showFocus = defaults.bool(forKey: Key.showFocus)
