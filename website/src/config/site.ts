@@ -13,7 +13,7 @@ export const site = {
   downloadSize: "1.5 MB",
   /** Every Download button. "releases/latest" always opens the newest GitHub release. */
   downloadUrl: "https://github.com/ruhaanvaid/notchhub/releases/latest",
-  githubUrl: "#",
+  githubUrl: "https://github.com/ruhaanvaid/notchhub",
   contactEmail: "ruhaanvaid@gmail.com",
   copyrightHolder: "Ruhaan Vaid",
   copyrightYear: 2026,
