@@ -20,7 +20,11 @@ enum NotchLayout {
     /// Expanded height below the notch band (header row sits beside the notch).
     static let expandedContentHeight: CGFloat = 124
 
-    /// Extra width on each side of the notch while a HUD is showing. A pill has no camera
+    /// Notch HUD: width, and the height of the row below the camera.
+    static let hudDropWidth: CGFloat = 340
+    static let hudDropHeight: CGFloat = 38
+
+    /// Extra width on each side of a pill while its (single-row) HUD is showing. A pill has no camera
     /// to work around, so its HUD can be more compact.
     static func hudWingWidth(for geometry: NotchGeometry, kind: HUDKind = .brightness) -> CGFloat {
         switch (geometry.hasHardwareNotch, kind) {
@@ -65,6 +69,11 @@ enum NotchLayout {
             return NotchMetrics(bodySize: size, topRadius: 0, bottomRadius: notch.height / 2)
 
         case let .hud(kind, _):
+            if geometry.hasHardwareNotch {
+                // Drops down below the camera: a compact bar with the same row as the panel.
+                let size = CGSize(width: max(hudDropWidth, notch.width + 48), height: notch.height + hudDropHeight)
+                return NotchMetrics(bodySize: size, topRadius: 8, bottomRadius: 20)
+            }
             let size = CGSize(width: notch.width + hudWingWidth(for: geometry, kind: kind) * 2, height: notch.height)
             return NotchMetrics(bodySize: size, topRadius: 6, bottomRadius: notch.height / 2.4)
 

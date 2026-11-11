@@ -76,11 +76,16 @@ struct NowPlayingTrack: Equatable {
     var canControl: Bool = true
 
     /// Second line: the artist/channel, or where it's playing ("Netflix · Google Chrome").
+    /// When the title is just the site's name (Netflix tabs are titled "Netflix"), only the
+    /// browser is named, so the site doesn't appear twice.
     var subtitle: String {
         if !artist.isEmpty { return artist }
-        guard player.isBrowser else { return player.displayName }
-        return album.isEmpty ? player.displayName : "\(album) · \(player.displayName)"
+        guard player.isBrowser, !album.isEmpty, album != title else { return player.displayName }
+        return "\(album) · \(player.displayName)"
     }
+
+    /// The streaming site, for browser media.
+    var site: MediaSite? { player.isBrowser ? MediaSite.named(album) : nil }
 }
 
 /// What's playing in Music, Spotify, or YouTube in a browser, via AppleScript. Avoids the

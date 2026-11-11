@@ -11,25 +11,32 @@ struct MediaSite: Sendable {
     let name: String
     /// Substrings of the tab URL that mean "this tab is playing (or can play) media".
     let urlPatterns: [String]
+    /// Colour and short mark for the placeholder artwork tile (not the site's logo).
+    let color: UInt32
+    let mark: String
 
     static let all: [MediaSite] = [
-        MediaSite(name: "YouTube Music", urlPatterns: ["music.youtube.com"]),
-        MediaSite(name: "YouTube", urlPatterns: ["youtube.com/watch", "youtube.com/shorts/", "youtube.com/live/"]),
-        MediaSite(name: "Netflix", urlPatterns: ["netflix.com/watch"]),
-        MediaSite(name: "Prime Video", urlPatterns: ["primevideo.com", "amazon.com/gp/video"]),
-        MediaSite(name: "Disney+", urlPatterns: ["disneyplus.com"]),
-        MediaSite(name: "Hulu", urlPatterns: ["hulu.com/watch"]),
-        MediaSite(name: "Max", urlPatterns: ["max.com/video", "play.max.com"]),
-        MediaSite(name: "Apple TV+", urlPatterns: ["tv.apple.com"]),
-        MediaSite(name: "Twitch", urlPatterns: ["twitch.tv/"]),
-        MediaSite(name: "Vimeo", urlPatterns: ["vimeo.com/"]),
-        MediaSite(name: "Crunchyroll", urlPatterns: ["crunchyroll.com/watch"]),
-        MediaSite(name: "Spotify", urlPatterns: ["open.spotify.com"]),
-        MediaSite(name: "SoundCloud", urlPatterns: ["soundcloud.com/"]),
+        MediaSite(name: "YouTube Music", urlPatterns: ["music.youtube.com"], color: 0xFF0033, mark: "♪"),
+        MediaSite(name: "YouTube", urlPatterns: ["youtube.com/watch", "youtube.com/shorts/", "youtube.com/live/"], color: 0xFF0033, mark: "▶"),
+        MediaSite(name: "Netflix", urlPatterns: ["netflix.com/watch"], color: 0xE50914, mark: "N"),
+        MediaSite(name: "Prime Video", urlPatterns: ["primevideo.com", "amazon.com/gp/video"], color: 0x1399FF, mark: "P"),
+        MediaSite(name: "Disney+", urlPatterns: ["disneyplus.com"], color: 0x1A3DBF, mark: "D+"),
+        MediaSite(name: "Hulu", urlPatterns: ["hulu.com/watch"], color: 0x1CE783, mark: "H"),
+        MediaSite(name: "Max", urlPatterns: ["max.com/video", "play.max.com"], color: 0x0029E8, mark: "M"),
+        MediaSite(name: "Apple TV+", urlPatterns: ["tv.apple.com"], color: 0x2C2C2E, mark: "tv"),
+        MediaSite(name: "Twitch", urlPatterns: ["twitch.tv/"], color: 0x9146FF, mark: "T"),
+        MediaSite(name: "Vimeo", urlPatterns: ["vimeo.com/"], color: 0x17B6EA, mark: "V"),
+        MediaSite(name: "Crunchyroll", urlPatterns: ["crunchyroll.com/watch"], color: 0xF47521, mark: "C"),
+        MediaSite(name: "Spotify", urlPatterns: ["open.spotify.com"], color: 0x1DB954, mark: "S"),
+        MediaSite(name: "SoundCloud", urlPatterns: ["soundcloud.com/"], color: 0xFF5500, mark: "S"),
     ]
 
     static func matching(_ url: String) -> MediaSite? {
         all.first { site in site.urlPatterns.contains { url.contains($0) } }
+    }
+
+    static func named(_ name: String) -> MediaSite? {
+        all.first { $0.name == name }
     }
 }
 

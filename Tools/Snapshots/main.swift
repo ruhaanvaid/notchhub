@@ -105,6 +105,20 @@ enum Snapshots {
             artwork: art
         )
         renderPart("nowplaying-youtube-no-js", NowPlayingView(service: youtube))
+        let netflix = NowPlayingService()
+        netflix.setPreview(
+            track: NowPlayingTrack(player: .chrome, title: "Netflix", artist: "", album: "Netflix", isPlaying: true,
+                                   trackID: "netflix", artworkURL: nil, canControl: false),
+            artwork: nil
+        )
+        renderPart("nowplaying-netflix-no-js", NowPlayingView(service: netflix))
+        let twitch = NowPlayingService()
+        twitch.setPreview(
+            track: NowPlayingTrack(player: .safari, title: "Some streamer", artist: "", album: "Twitch", isPlaying: true,
+                                   trackID: "twitch", artworkURL: nil, canControl: false),
+            artwork: nil
+        )
+        renderPart("nowplaying-twitch-no-js", NowPlayingView(service: twitch))
         renderPart("volume", VolumeRow(volume: volume))
         renderPart("shelf", ShelfRowView(shelf: shelfStore, isTargeted: false).frame(height: 56))
 

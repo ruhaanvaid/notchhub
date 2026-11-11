@@ -1,7 +1,8 @@
 import SwiftUI
 
-/// Volume/brightness HUD. Around a hardware notch: icon and value in the left wing, meter in
-/// the right wing, camera housing between them. On a pill (no camera) it's one continuous row.
+/// Volume/brightness HUD: icon, meter and value in one row. On a hardware notch the shape
+/// drops down below the camera housing and the row sits there; on a pill (no camera) the
+/// row fills the pill itself.
 ///
 /// Volume uses Apple's 16-step scale: 16 segments and a step count ("11", or "10¼" after a
 /// Shift+Option fine step). Brightness uses a bar and a percentage.
@@ -14,43 +15,37 @@ struct NotchHUDView: View {
     let hasCamera: Bool
 
     var body: some View {
-        Group {
-            if hasCamera {
-                HStack(spacing: 0) {
-                    HStack(spacing: 7) {
-                        icon
-                        if kind == .volume { Spacer(minLength: 0) }
-                        value
-                    }
-                    .padding(.leading, 16)
-                    .padding(.trailing, kind == .volume ? 12 : 0)
-                    .frame(width: wingWidth, alignment: .leading)
-                    // Nothing can be drawn under the camera housing.
-                    Color.clear.frame(width: notchWidth)
-                    meter
-                        .padding(.leading, kind == .volume ? 6 : 8)
-                        .padding(.trailing, kind == .volume ? 14 : 16)
-                        .frame(width: wingWidth)
-                }
-            } else {
-                HStack(spacing: 10) {
-                    icon
-                    meter
-                    value.frame(width: 30, alignment: .trailing)
-                }
-                .padding(.horizontal, 14)
+        if hasCamera {
+            // Below the camera housing: icon, meter, value in one row (as in the panel).
+            VStack(spacing: 0) {
+                Color.clear.frame(height: height)
+                row
+                    .padding(.horizontal, 18)
+                    .frame(height: NotchLayout.hudDropHeight - 6)
+                Spacer(minLength: 0)
             }
+        } else {
+            row
+                .padding(.horizontal, 14)
+                .frame(height: height)
         }
-        .frame(height: height)
+    }
+
+    private var row: some View {
+        HStack(spacing: 12) {
+            icon
+            meter
+            value.frame(width: 28, alignment: .trailing)
+        }
     }
 
     @ViewBuilder
     private var meter: some View {
         switch kind {
         case .volume:
-            SegmentedLevel(level: level).frame(height: 8)
+            SegmentedLevel(level: level, minSpacing: 3).frame(height: 12)
         case .brightness:
-            LevelBar(level: level).frame(height: 5)
+            LevelBar(level: level).frame(height: 6)
         }
     }
 

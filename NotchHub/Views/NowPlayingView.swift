@@ -3,10 +3,29 @@ import SwiftUI
 /// One row: artwork with a soft glow in its own colour, title and artist, transport controls.
 struct NowPlayingView: View {
     let service: NowPlayingService
-    /// Opens Settings, which explains how to enable YouTube controls.
+    /// Opens Settings, which has the full explanation of browser playback controls.
     var openSettings: () -> Void = {}
 
+    /// Showing the short "how to get playback controls" note in place of the row.
+    @State private var showingControlsHelp = false
+
     var body: some View {
+        Group {
+            if showingControlsHelp, let track = service.track, !track.canControl {
+                controlsHelp(for: track)
+                    .transition(.opacity)
+            } else {
+                row.transition(.opacity)
+            }
+        }
+        .frame(height: 56)
+        .animation(.easeOut(duration: 0.2), value: showingControlsHelp)
+        .onChange(of: service.track?.canControl) { _, canControl in
+            if canControl != false { showingControlsHelp = false }
+        }
+    }
+
+    private var row: some View {
         HStack(spacing: 12) {
             artwork
             VStack(alignment: .leading, spacing: 3) {
@@ -19,9 +38,9 @@ struct NowPlayingView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
 
             if let track = service.track, !track.canControl {
-                // YouTube without "Allow JavaScript from Apple Events": title only.
-                Button(action: openSettings) {
-                    Text("Enable controls")
+                // Browser media without "Allow JavaScript from Apple Events": no buttons yet.
+                Button { showingControlsHelp = true } label: {
+                    Text("Playback controls")
                         .font(NotchStyle.captionFont)
                         .foregroundStyle(NotchStyle.primary)
                         .padding(.horizontal, 10)
@@ -29,7 +48,7 @@ struct NowPlayingView: View {
                         .background(NotchStyle.fillStrong, in: Capsule())
                 }
                 .buttonStyle(.plain)
-                .help("Shows how to let NotchHub see play state and control YouTube")
+                .help("How to get play, pause and skip buttons for \(track.player.displayName)")
             } else if let track = service.track {
                 HStack(spacing: 6) {
                     TransportButton(symbol: "backward.fill", size: 13, action: service.previousTrack)
@@ -42,8 +61,50 @@ struct NowPlayingView: View {
                 }
             }
         }
-        .frame(height: 56)
         .animation(.easeOut(duration: 0.2), value: service.track)
+    }
+
+    /// Why there are no buttons, and the one browser setting that adds them.
+    private func controlsHelp(for track: NowPlayingTrack) -> some View {
+        let browser = track.player.displayName
+        let path = track.player == .safari
+            ? "Safari › Develop › Allow JavaScript from Apple Events"
+            : "\(browser) › View › Developer › Allow JavaScript from Apple Events"
+        return HStack(alignment: .center, spacing: 12) {
+            Image(systemName: "playpause.fill")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(NotchStyle.secondary)
+                .frame(width: 56, height: 56)
+                .background(NotchStyle.fill, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Play/pause and skip need one \(browser) setting:")
+                    .font(.system(size: 11, weight: .semibold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
+                Text(path)
+                    .font(.system(size: 11))
+                    .foregroundStyle(NotchStyle.secondary)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            VStack(spacing: 4) {
+                Button("Details") { openSettings() }
+                    .buttonStyle(.plain)
+                    .font(NotchStyle.captionFont)
+                    .foregroundStyle(NotchStyle.primary)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+                    .background(NotchStyle.fillStrong, in: Capsule())
+                    .help("Opens Settings, which explains what this browser setting allows")
+                Button("Done") { showingControlsHelp = false }
+                    .buttonStyle(.plain)
+                    .font(NotchStyle.captionFont)
+                    .foregroundStyle(NotchStyle.secondary)
+            }
+        }
     }
 
     private var title: String {
@@ -78,13 +139,21 @@ struct NowPlayingView: View {
 
     private var artwork: some View {
         let shape = RoundedRectangle(cornerRadius: 12, style: .continuous)
-        let tint = service.artworkTint.map(Color.init(nsColor:))
+        let site = service.track?.site
+        let siteColor = site.map { Color(rgb: $0.color) }
+        let tint = service.artworkTint.map(Color.init(nsColor:)) ?? (service.artwork == nil ? siteColor : nil)
         return ZStack {
             shape.fill(NotchStyle.fill)
             if let image = service.artwork, service.track != nil {
                 Image(nsImage: image)
                     .resizable()
                     .aspectRatio(contentMode: .fill)
+            } else if let site, let siteColor {
+                // A simple coloured tile with the site's initial (not its logo).
+                shape.fill(siteColor.gradient)
+                Text(site.mark)
+                    .font(.system(size: site.mark.count > 1 ? 18 : 24, weight: .heavy, design: .rounded))
+                    .foregroundStyle(.white)
             } else {
                 Image(systemName: "music.note")
                     .font(.system(size: 20, weight: .medium))
@@ -123,5 +192,16 @@ private struct TransportButton: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+    }
+}
+
+extension Color {
+    /// From a 0xRRGGBB value.
+    init(rgb: UInt32) {
+        self.init(
+            red: Double((rgb >> 16) & 0xFF) / 255,
+            green: Double((rgb >> 8) & 0xFF) / 255,
+            blue: Double(rgb & 0xFF) / 255
+        )
     }
 }
