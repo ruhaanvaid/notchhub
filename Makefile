@@ -1,9 +1,10 @@
 PROJECT := NotchHub.xcodeproj
 SCHEME  := NotchHub
-DERIVED := build
+# ".noindex" keeps development builds out of Spotlight and Launchpad.
+DERIVED := build/xcode.noindex
 APP_DEBUG   := $(DERIVED)/Build/Products/Debug/NotchHub.app
 APP_RELEASE := $(DERIVED)/Build/Products/Release/NotchHub.app
-DIST    := $(DERIVED)/dist
+DIST    := build/dist
 VERSION := $(shell sed -nE 's/^ *MARKETING_VERSION: *"([^"]+)".*/\1/p' project.yml)
 ARCH    := $(shell uname -m)
 

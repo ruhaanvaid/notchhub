@@ -82,10 +82,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // The tap can only exist while Accessibility is granted; follow the permission live.
         statusItemController = statusItem
         updates.onStatusChange = { [weak statusItem] status in
-            if case .available = status {
+            switch status {
+            case .available, .installing:
                 statusItem?.setUpdateBadge(true)
-            } else if status == .upToDate {
+            case .upToDate:
                 statusItem?.setUpdateBadge(false)
+            default:
+                break
             }
         }
         updates.start()

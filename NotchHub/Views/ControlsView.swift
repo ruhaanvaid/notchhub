@@ -75,7 +75,8 @@ struct VolumeRow: View {
             .buttonStyle(.plain)
             .disabled(!volume.canSetMute)
 
-            LevelSlider(value: volume.displayedLevel) { newValue in
+            // Apple's 16 steps, like the HUD: click or drag across the squares.
+            SegmentedSlider(value: volume.displayedLevel) { newValue in
                 volume.setVolume(newValue)
             }
             .disabled(!volume.canSetVolume)
@@ -93,6 +94,36 @@ struct VolumeRow: View {
 
     private var symbol: String {
         volume.displayedLevel < 0.001 ? "speaker.slash.fill" : "speaker.fill"
+    }
+}
+
+/// The 16-square volume meter as a control. Clicking a square sets the volume to that
+/// step; dragging sweeps across them; the far left edge is zero.
+struct SegmentedSlider: View {
+    let value: Double
+    let onChange: (Double) -> Void
+
+    @Environment(\.isEnabled) private var isEnabled
+
+    var body: some View {
+        GeometryReader { proxy in
+            let width = max(proxy.size.width, 1)
+            SegmentedLevel(level: value, minSpacing: 3)
+                .frame(height: 15)
+                .frame(maxHeight: .infinity)
+                .contentShape(Rectangle())
+                .gesture(
+                    DragGesture(minimumDistance: 0)
+                        .onChanged { gesture in
+                            guard isEnabled else { return }
+                            let steps = Double(VolumeSteps.count)
+                            let x = min(max(gesture.location.x, 0), width)
+                            let step = x < 3 ? 0 : min(steps, (x / width * steps).rounded(.down) + 1)
+                            onChange(step / steps)
+                        }
+                )
+        }
+        .frame(height: 20)
     }
 }
 

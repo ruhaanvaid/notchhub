@@ -1,5 +1,8 @@
 import AppKit
 import Observation
+import OSLog
+
+private let log = Logger(subsystem: "com.notchhub.app", category: "nowplaying")
 
 enum MediaPlayer: String, CaseIterable, Sendable {
     case music
@@ -72,10 +75,11 @@ struct NowPlayingTrack: Equatable {
     /// is known, but not the play state, and there are no controls.
     var canControl: Bool = true
 
-    /// Second line: the artist/channel, or where it's playing.
+    /// Second line: the artist/channel, or where it's playing ("Netflix · Google Chrome").
     var subtitle: String {
         if !artist.isEmpty { return artist }
-        return player.isBrowser ? "YouTube · \(player.displayName)" : player.displayName
+        guard player.isBrowser else { return player.displayName }
+        return album.isEmpty ? player.displayName : "\(album) · \(player.displayName)"
     }
 }
 
@@ -226,24 +230,34 @@ final class NowPlayingService {
 
         // Only talk to players that are already running: a `tell` would launch them.
         let includeBrowsers = AppSettings.shared.includeBrowserMedia
+        // Which apps are making sound: the play state of browser tabs we can't script.
+        let audible = includeBrowsers ? AudioActivity.playingBrowsers() : []
         for player in MediaPlayer.allCases where player.isRunning {
             if player.isBrowser, !includeBrowsers { continue }
             let script = player.isBrowser ? BrowserMedia.queryScript(for: player) : Self.stateScript(for: player)
             switch await runner.run(script) {
             case let .success(string, _):
                 if player.isBrowser {
-                    candidates += BrowserMedia.parse(string, browser: player)
+                    candidates += BrowserMedia.parse(
+                        string, browser: player,
+                        browserIsPlaying: audible.contains(player)
+                    )
                 } else if let track = Self.parseState(string, player: player) {
                     candidates.append(track)
                 }
-            case let .failure(code, _):
+            case let .failure(code, message):
                 if code == AppleScriptRunner.notPermittedError { denied = player }
+                log.error("\(player.displayName, privacy: .public) query failed (\(code, privacy: .public)): \(message, privacy: .public)")
             }
         }
 
         permissionDenied = denied
         let chosen = choose(from: candidates)
         if chosen != track {
+            let summary = candidates.map {
+                "\($0.player.displayName)/\($0.album.isEmpty ? "-" : $0.album) playing=\($0.isPlaying) controls=\($0.canControl)"
+            }.joined(separator: "; ")
+            log.info("showing \(chosen.map { "\($0.player.displayName) \($0.album)" } ?? "nothing", privacy: .public) from [\(summary, privacy: .public)]")
             track = chosen
         }
         if let chosen { lastActivePlayer = chosen.isPlaying ? chosen.player : lastActivePlayer }

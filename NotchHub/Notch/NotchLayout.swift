@@ -24,7 +24,7 @@ enum NotchLayout {
     /// to work around, so its HUD can be more compact.
     static func hudWingWidth(for geometry: NotchGeometry, kind: HUDKind = .brightness) -> CGFloat {
         switch (geometry.hasHardwareNotch, kind) {
-        case (true, .volume): return 150 // room for 16 near-square segments beside the camera
+        case (true, .volume): return 104 // 16 small squares beside the camera, without a wide HUD
         case (true, .brightness): return 88
         case (false, .volume): return 80
         case (false, .brightness): return 64

@@ -37,7 +37,7 @@ struct SettingsView: View {
                 }
                 Toggle(isOn: $settings.checkForUpdates) {
                     Text("Check for updates automatically")
-                    Text("Once a day, NotchHub asks GitHub whether a newer version exists. Nothing is downloaded or installed automatically.")
+                    Text("Once a day, NotchHub asks GitHub whether a newer version exists. Updates install in place, keeping your settings and permissions, but only when you choose Install.")
                 }
             }
 
@@ -63,8 +63,8 @@ struct SettingsView: View {
                     Text("Music and Spotify. Uses Automation permission for each app.")
                 }
                 Toggle(isOn: $settings.includeBrowserMedia) {
-                    Text("Include YouTube in browsers")
-                    Text("Safari, Chrome, Arc, Brave and Edge. Shows the video title; see below for controls.")
+                    Text("Include video and music in browsers")
+                    Text("YouTube, Netflix, Prime Video, Disney+, Twitch, Spotify and more, in Safari, Chrome, Arc, Brave and Edge. Shows the title; see below for controls.")
                 }
                 .disabled(!settings.showNowPlaying)
                 if settings.showNowPlaying && settings.includeBrowserMedia {
@@ -102,7 +102,16 @@ struct SettingsView: View {
                 Text("Checking…").foregroundStyle(.secondary)
             }
         case let .available(release):
-            Button("Download \(release.version)…") { updates.openReleasePage() }
+            HStack(spacing: 8) {
+                Button("Release Notes") { updates.openReleasePage() }
+                Button("Install \(release.version) and Relaunch") { Task { await updates.install() } }
+                    .keyboardShortcut(.defaultAction)
+            }
+        case let .installing(_, step):
+            HStack(spacing: 6) {
+                ProgressView().controlSize(.small)
+                Text(step).foregroundStyle(.secondary)
+            }
         case .upToDate:
             HStack(spacing: 8) {
                 Text("Up to date").foregroundStyle(.secondary)
@@ -160,10 +169,10 @@ struct SettingsView: View {
 private struct YouTubeControlsNote: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("To see whether YouTube is playing and control it, turn on **Allow JavaScript from Apple Events** in your browser:")
+            Text("To see exactly which tab is playing and control it, turn on **Allow JavaScript from Apple Events** in your browser:")
             Text("• Chrome, Arc, Brave, Edge: **View › Developer › Allow JavaScript from Apple Events**")
             Text("• Safari: **Settings › Advanced › Show features for web developers**, then **Develop › Allow JavaScript from Apple Events**")
-            Text("This lets apps you've allowed to control that browser run scripts in its pages, so only turn it on if you're comfortable with that. NotchHub only runs a short script on YouTube tabs, to read the title and play state and press play, pause, or next.")
+            Text("This lets apps you've allowed to control that browser run scripts in its pages, so only turn it on if you're comfortable with that. NotchHub only runs a short script on media tabs, to read the title and play state and press play, pause, or next.")
                 .foregroundStyle(.secondary)
         }
         .font(.caption)

@@ -63,8 +63,14 @@ final class StatusItemController: NSObject, NSMenuDelegate {
 
     func menuNeedsUpdate(_ menu: NSMenu) {
         launchAtLoginItem.state = LaunchAtLogin.isEnabled ? .on : .off
-        if let release = updates.availableUpdate {
+        if updates.isInstalling, let release = updates.availableUpdate {
+            updateItem.title = "Installing NotchHub \(release.version)…"
+            updateItem.isEnabled = false
+            updateItem.isHidden = false
+            updateSeparator.isHidden = false
+        } else if let release = updates.availableUpdate {
             updateItem.title = "Update Available: NotchHub \(release.version)…"
+            updateItem.isEnabled = true
             updateItem.isHidden = false
             updateSeparator.isHidden = false
         } else {
@@ -105,18 +111,48 @@ final class StatusItemController: NSObject, NSMenuDelegate {
 
     @objc private func openPermissions() { onPermissions() }
 
-    @objc private func openUpdate() { updates.openReleasePage() }
+    @objc private func openUpdate() {
+        guard let release = updates.availableUpdate else { return }
+        offerInstall(release)
+    }
+
+    /// "Install and Relaunch" / "Release Notes" / "Later".
+    private func offerInstall(_ release: UpdateService.Release) {
+        let alert = NSAlert()
+        alert.messageText = "NotchHub \(release.version) is available"
+        alert.informativeText = "You have \(UpdateService.currentVersion). NotchHub will download the update, replace itself, and reopen. Your settings, shelf and permissions stay as they are."
+        alert.addButton(withTitle: "Install and Relaunch")
+        alert.addButton(withTitle: "Release Notes")
+        alert.addButton(withTitle: "Later")
+        NSApp.activate()
+        switch alert.runModal() {
+        case .alertFirstButtonReturn:
+            Task {
+                guard let error = await updates.install() else { return }
+                let failure = NSAlert()
+                failure.messageText = "Couldn't install the update"
+                failure.informativeText = error
+                failure.addButton(withTitle: "Download Manually…")
+                failure.addButton(withTitle: "OK")
+                NSApp.activate()
+                if failure.runModal() == .alertFirstButtonReturn { updates.openReleasePage() }
+            }
+        case .alertSecondButtonReturn:
+            updates.openReleasePage()
+        default:
+            break
+        }
+    }
 
     @objc private func checkForUpdates() {
         Task {
             let status = await updates.check()
+            if case let .available(release) = status {
+                offerInstall(release)
+                return
+            }
             let alert = NSAlert()
             switch status {
-            case let .available(release):
-                alert.messageText = "NotchHub \(release.version) is available"
-                alert.informativeText = "You have \(UpdateService.currentVersion). Download the new version from GitHub, then replace the app in your Applications folder. Your settings and permissions carry over."
-                alert.addButton(withTitle: "Download…")
-                alert.addButton(withTitle: "Later")
             case .upToDate:
                 alert.messageText = "You're up to date"
                 alert.informativeText = "NotchHub \(UpdateService.currentVersion) is the latest version."
@@ -125,13 +161,11 @@ final class StatusItemController: NSObject, NSMenuDelegate {
                 alert.messageText = "Couldn't check for updates"
                 alert.informativeText = message
                 alert.addButton(withTitle: "OK")
-            case .idle, .checking:
+            case .idle, .checking, .available, .installing:
                 return
             }
             NSApp.activate()
-            if alert.runModal() == .alertFirstButtonReturn, case .available = status {
-                updates.openReleasePage()
-            }
+            alert.runModal()
         }
     }
 

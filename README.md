@@ -3,7 +3,7 @@
 A free, open-source macOS menu-bar utility that turns the MacBook notch into a Dynamic Island-style control strip.
 
 - **Volume and brightness HUD**: replaces Apple's overlay with one that grows out of the notch. Volume uses Apple's 16-step scale (16 segments, with quarter steps on Shift+Option); brightness shows a level bar and percentage.
-- **Hover panel**: now playing (Music, Spotify, and YouTube in Safari, Chrome, Arc, Brave or Edge), a volume slider, an audio output picker, Keep Awake and Do Not Disturb buttons.
+- **Hover panel**: now playing (Music, Spotify, and YouTube, Netflix and other streaming sites in Safari, Chrome, Arc, Brave or Edge), a 16-step volume control, an audio output picker, Keep Awake and Do Not Disturb buttons.
 - **File shelf**: drag files onto the notch to park them, then drag them back out to drop them anywhere.
 - **Works without a notch**: shows a small pill at the top of the main display, either alongside the notch when you use an external monitor or on its own on Macs without one.
 - Hides while a full-screen app covers the screen.
@@ -29,7 +29,7 @@ Requires macOS 14 or later, on Apple silicon or Intel. No third-party dependenci
 5. To replace Apple's volume and brightness overlay, NotchHub asks for one permission. Click **Open Settings** in its welcome window and switch NotchHub on, under **Accessibility** (macOS 14–26) or **Device Control and Data Access** (macOS 27 and later). Everything else works without it.
 6. Optional: set up the [Do Not Disturb shortcuts](#do-not-disturb-setup), and turn on **Launch at login** in Settings.
 
-**Updating:** from version 0.3.0 on, NotchHub checks GitHub once a day and shows a dot on its menu-bar icon when a new version is out (menu › **Update Available**, or **Check for Updates…** any time). Quit NotchHub, replace the app in Applications with the new download, and open it again. Your settings, shelf and permission carry over. Automatic checks can be turned off in Settings › Updates.
+**Updating:** NotchHub checks GitHub once a day and shows a dot on its menu-bar icon when a new version is out. Choose **Update Available › Install and Relaunch** (or **Check for Updates…** any time): it downloads the update, checks it's signed by the same developer, replaces itself in place and reopens. Your settings, shelf and permissions carry over. (In-place updates start with 0.5.0; on older versions, replace the app by hand once.) Automatic checks can be turned off in Settings › Updates.
 
 ## Build from source
 
@@ -46,6 +46,8 @@ make run       # generate the project, build Debug, and launch it
 make build     # build only
 make install   # build Release and copy it to /Applications (best for Launch at Login)
 make dist      # universal Release build zipped into build/dist/ for a GitHub release
+
+Build output goes to `build/xcode.noindex`. The `.noindex` suffix keeps development copies out of Spotlight and Launchpad, so only the installed NotchHub shows up.
 make clean     # remove build output and the generated project
 ```
 
@@ -90,14 +92,16 @@ Then grant it again from the onboarding window.
 
 **If nothing appears at all:** check Screen Time. Under Downtime or App Limits, macOS hides the windows of apps that aren't allowed. Add NotchHub to System Settings › Screen Time › **Always Allowed**.
 
-## YouTube controls
+## Video and music in your browser
 
-NotchHub finds YouTube and YouTube Music tabs in Safari, Chrome, Arc, Brave and Edge, and shows the video's title and thumbnail. (Firefox can't be scripted this way.) To also see whether a video is playing and control it from the notch, turn on **Allow JavaScript from Apple Events** in your browser:
+NotchHub finds media tabs in Safari, Chrome, Arc, Brave and Edge: YouTube, YouTube Music, Netflix, Prime Video, Disney+, Hulu, Max, Apple TV+, Twitch, Vimeo, Crunchyroll, Spotify and SoundCloud. (Firefox can't be scripted this way.) It shows the title, plus the thumbnail for YouTube, and knows when the browser is playing from the power assertion browsers hold during playback. No extra permission is needed beyond letting NotchHub control the browser.
+
+When several media tabs are open, NotchHub assumes the playing one is the active tab of your front window. To see exactly which tab is playing and control it from the notch, turn on **Allow JavaScript from Apple Events** in your browser:
 
 - **Chrome, Arc, Brave, Edge:** View › Developer › Allow JavaScript from Apple Events
 - **Safari:** Settings › Advanced › Show features for web developers, then Develop › Allow JavaScript from Apple Events
 
-This option lets any app you've allowed to control that browser run scripts in its pages, so only turn it on if you're comfortable with that. NotchHub only runs a short script on YouTube tabs, to read the title and play state and press play, pause or next. You can turn browser detection off in Settings › Panel.
+This option lets any app you've allowed to control that browser run scripts in its pages, so only turn it on if you're comfortable with that. NotchHub only runs a short script on the media tabs listed above, to read the title and play state and press play, pause or next. You can turn browser detection off in Settings › Panel.
 
 ## Do Not Disturb setup
 

@@ -28,8 +28,8 @@ struct NotchHUDView: View {
                     // Nothing can be drawn under the camera housing.
                     Color.clear.frame(width: notchWidth)
                     meter
-                        .padding(.leading, 8)
-                        .padding(.trailing, 16)
+                        .padding(.leading, kind == .volume ? 6 : 8)
+                        .padding(.trailing, kind == .volume ? 14 : 16)
                         .frame(width: wingWidth)
                 }
             } else {
@@ -101,31 +101,34 @@ enum VolumeSteps {
     }
 }
 
-/// 16 segments, like the native volume HUD; a fine step fills part of a segment.
+/// 16 square segments, like the native volume HUD; a fine step fills part of a segment.
+/// Squares are as big as the height allows (or the width, if that's tighter) and spread out
+/// evenly to fill the width.
 struct SegmentedLevel: View {
     let level: Double
+    var minSpacing: CGFloat = 1.5
 
     var body: some View {
         GeometryReader { proxy in
-            let count = VolumeSteps.count
-            let spacing: CGFloat = proxy.size.width > 180 ? 3 : 2
-            let width = (proxy.size.width - spacing * CGFloat(count - 1)) / CGFloat(count)
-            let filled = min(max(level, 0), 1) * Double(count)
+            let count = CGFloat(VolumeSteps.count)
+            let size = max(1, min(proxy.size.height, (proxy.size.width - minSpacing * (count - 1)) / count))
+            let spacing = max(minSpacing, (proxy.size.width - size * count) / (count - 1))
+            let filled = min(max(level, 0), 1) * Double(VolumeSteps.count)
             HStack(spacing: spacing) {
-                ForEach(0..<count, id: \.self) { index in
+                ForEach(0..<VolumeSteps.count, id: \.self) { index in
                     let fraction = min(max(filled - Double(index), 0), 1)
+                    let corner = max(1, size * 0.22)
                     ZStack(alignment: .leading) {
-                        RoundedRectangle(cornerRadius: 1.5, style: .continuous)
+                        RoundedRectangle(cornerRadius: corner, style: .continuous)
                             .fill(NotchStyle.fillStrong)
-                        RoundedRectangle(cornerRadius: 1.5, style: .continuous)
+                        RoundedRectangle(cornerRadius: corner, style: .continuous)
                             .fill(NotchStyle.primary)
-                            .frame(width: width * fraction)
+                            .frame(width: size * fraction)
                     }
-                    // Square segments, like Apple's, however much room there is.
-                    .frame(width: max(width, 1), height: min(proxy.size.height, max(width, 1)))
-                    .frame(maxHeight: .infinity)
+                    .frame(width: size, height: size)
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         }
         .animation(.easeOut(duration: 0.12), value: level)
     }
