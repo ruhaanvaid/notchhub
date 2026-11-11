@@ -40,7 +40,7 @@ struct NotchRootView: View {
                     kind: kind,
                     level: level,
                     notchWidth: geometry.notchSize.width,
-                    wingWidth: NotchLayout.hudWingWidth(for: geometry),
+                    wingWidth: NotchLayout.hudWingWidth(for: geometry, kind: kind),
                     height: geometry.notchSize.height,
                     hasCamera: geometry.hasHardwareNotch
                 )

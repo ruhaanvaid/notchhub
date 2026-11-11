@@ -81,7 +81,8 @@ struct VolumeRow: View {
             .disabled(!volume.canSetVolume)
             .opacity(volume.canSetVolume ? 1 : 0.4)
 
-            Text("\(Int((volume.displayedLevel * 100).rounded()))")
+            // Apple's 16-step scale, matching the HUD.
+            Text(VolumeSteps.format(volume.displayedLevel))
                 .font(.system(size: 12, weight: .semibold).monospacedDigit())
                 .foregroundStyle(NotchStyle.secondary)
                 .contentTransition(.numericText(value: volume.displayedLevel))

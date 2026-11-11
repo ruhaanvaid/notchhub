@@ -2,7 +2,7 @@
 
 A free, open-source macOS menu-bar utility that turns the MacBook notch into a Dynamic Island-style control strip.
 
-- **Volume and brightness HUD**: replaces Apple's overlay with one that grows out of the notch, with a level bar and percentage.
+- **Volume and brightness HUD**: replaces Apple's overlay with one that grows out of the notch. Volume uses Apple's 16-step scale (16 segments, with quarter steps on Shift+Option); brightness shows a level bar and percentage.
 - **Hover panel**: now playing (Music, Spotify, and YouTube in Safari, Chrome, Arc, Brave or Edge), a volume slider, an audio output picker, Keep Awake and Do Not Disturb buttons.
 - **File shelf**: drag files onto the notch to park them, then drag them back out to drop them anywhere.
 - **Works without a notch**: shows a small pill at the top of the main display, either alongside the notch when you use an external monitor or on its own on Macs without one.

@@ -77,6 +77,9 @@ enum Snapshots {
         render("3-hud-volume-notch", geometry: notch) { $0.showHUD(.volume, level: 0.62) }
         render("4-hud-brightness-pill", geometry: pill) { $0.showHUD(.brightness, level: 0.35) }
         render("4b-hud-volume-notch-100", geometry: notch) { $0.showHUD(.volume, level: 1.0) }
+        render("4e-hud-volume-notch-fine", geometry: notch) { $0.showHUD(.volume, level: 10.25 / 16) }
+        render("4f-hud-volume-pill-11", geometry: pill) { $0.showHUD(.volume, level: 11.0 / 16) }
+        render("4g-hud-volume-notch-muted", geometry: notch) { $0.showHUD(.volume, level: 0) }
         render("4c-hud-brightness-notch", geometry: notch) { $0.showHUD(.brightness, level: 0.06) }
         render("4d-hud-volume-pill-100", geometry: pill) { $0.showHUD(.volume, level: 1.0) }
         render("5-expanded", geometry: notch) { $0.expand() }

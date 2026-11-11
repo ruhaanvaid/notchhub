@@ -22,8 +22,13 @@ enum NotchLayout {
 
     /// Extra width on each side of the notch while a HUD is showing. A pill has no camera
     /// to work around, so its HUD can be more compact.
-    static func hudWingWidth(for geometry: NotchGeometry) -> CGFloat {
-        geometry.hasHardwareNotch ? 88 : 64
+    static func hudWingWidth(for geometry: NotchGeometry, kind: HUDKind = .brightness) -> CGFloat {
+        switch (geometry.hasHardwareNotch, kind) {
+        case (true, .volume): return 150 // room for 16 near-square segments beside the camera
+        case (true, .brightness): return 88
+        case (false, .volume): return 80
+        case (false, .brightness): return 64
+        }
     }
     /// Extra width on each side of the idle notch while the indicator dot is showing.
     /// (Nothing can be drawn inside the hardware notch: it has no pixels.)
@@ -59,8 +64,8 @@ enum NotchLayout {
             }
             return NotchMetrics(bodySize: size, topRadius: 0, bottomRadius: notch.height / 2)
 
-        case .hud:
-            let size = CGSize(width: notch.width + hudWingWidth(for: geometry) * 2, height: notch.height)
+        case let .hud(kind, _):
+            let size = CGSize(width: notch.width + hudWingWidth(for: geometry, kind: kind) * 2, height: notch.height)
             return NotchMetrics(bodySize: size, topRadius: 6, bottomRadius: notch.height / 2.4)
 
         case .expanded:

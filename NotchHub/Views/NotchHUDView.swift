@@ -1,7 +1,10 @@
 import SwiftUI
 
-/// Volume/brightness HUD. Around a hardware notch: icon in the left wing, level bar in the
-/// right wing, camera housing between them. On a pill (no camera) it's one continuous row.
+/// Volume/brightness HUD. Around a hardware notch: icon and value in the left wing, meter in
+/// the right wing, camera housing between them. On a pill (no camera) it's one continuous row.
+///
+/// Volume uses Apple's 16-step scale: 16 segments and a step count ("11", or "10¼" after a
+/// Shift+Option fine step). Brightness uses a bar and a percentage.
 struct NotchHUDView: View {
     let kind: HUDKind
     let level: Double
@@ -16,14 +19,15 @@ struct NotchHUDView: View {
                 HStack(spacing: 0) {
                     HStack(spacing: 7) {
                         icon
-                        percentage
+                        if kind == .volume { Spacer(minLength: 0) }
+                        value
                     }
                     .padding(.leading, 16)
+                    .padding(.trailing, kind == .volume ? 12 : 0)
                     .frame(width: wingWidth, alignment: .leading)
                     // Nothing can be drawn under the camera housing.
                     Color.clear.frame(width: notchWidth)
-                    LevelBar(level: level)
-                        .frame(height: 5)
+                    meter
                         .padding(.leading, 8)
                         .padding(.trailing, 16)
                         .frame(width: wingWidth)
@@ -31,8 +35,8 @@ struct NotchHUDView: View {
             } else {
                 HStack(spacing: 10) {
                     icon
-                    LevelBar(level: level).frame(height: 5)
-                    percentage.frame(width: 26, alignment: .trailing)
+                    meter
+                    value.frame(width: 30, alignment: .trailing)
                 }
                 .padding(.horizontal, 14)
             }
@@ -40,9 +44,20 @@ struct NotchHUDView: View {
         .frame(height: height)
     }
 
-    /// Whole-number percentage, e.g. "62".
-    private var percentage: some View {
-        Text("\(Int((level * 100).rounded()))")
+    @ViewBuilder
+    private var meter: some View {
+        switch kind {
+        case .volume:
+            SegmentedLevel(level: level).frame(height: 8)
+        case .brightness:
+            LevelBar(level: level).frame(height: 5)
+        }
+    }
+
+    /// "11" (steps out of 16) for volume, "62" (percent) for brightness.
+    private var value: some View {
+        let text = kind == .volume ? VolumeSteps.format(level) : "\(Int((level * 100).rounded()))"
+        return Text(text)
             .font(.system(size: 12, weight: .semibold).monospacedDigit())
             .foregroundStyle(NotchStyle.secondary)
             .contentTransition(.numericText(value: level))
@@ -70,6 +85,49 @@ struct NotchHUDView: View {
         case .brightness:
             return level < 0.5 ? "sun.min.fill" : "sun.max.fill"
         }
+    }
+}
+
+/// Apple's 16-step volume scale.
+enum VolumeSteps {
+    static let count = 16
+
+    /// "0"–"16", with ¼ ½ ¾ for Shift+Option fine steps (e.g. "10¼").
+    static func format(_ level: Double) -> String {
+        let quarters = Int((min(max(level, 0), 1) * Double(count) * 4).rounded())
+        let whole = quarters / 4
+        let fraction = ["", "¼", "½", "¾"][quarters % 4]
+        return whole == 0 && !fraction.isEmpty ? fraction : "\(whole)\(fraction)"
+    }
+}
+
+/// 16 segments, like the native volume HUD; a fine step fills part of a segment.
+struct SegmentedLevel: View {
+    let level: Double
+
+    var body: some View {
+        GeometryReader { proxy in
+            let count = VolumeSteps.count
+            let spacing: CGFloat = proxy.size.width > 180 ? 3 : 2
+            let width = (proxy.size.width - spacing * CGFloat(count - 1)) / CGFloat(count)
+            let filled = min(max(level, 0), 1) * Double(count)
+            HStack(spacing: spacing) {
+                ForEach(0..<count, id: \.self) { index in
+                    let fraction = min(max(filled - Double(index), 0), 1)
+                    ZStack(alignment: .leading) {
+                        RoundedRectangle(cornerRadius: 1.5, style: .continuous)
+                            .fill(NotchStyle.fillStrong)
+                        RoundedRectangle(cornerRadius: 1.5, style: .continuous)
+                            .fill(NotchStyle.primary)
+                            .frame(width: width * fraction)
+                    }
+                    // Square segments, like Apple's, however much room there is.
+                    .frame(width: max(width, 1), height: min(proxy.size.height, max(width, 1)))
+                    .frame(maxHeight: .infinity)
+                }
+            }
+        }
+        .animation(.easeOut(duration: 0.12), value: level)
     }
 }
 
