@@ -579,20 +579,14 @@ const hudIcon = (icon: ReactNode) => (
   <span style={{ width: pt(24), display: "grid", placeItems: "center", flex: "none" }}>{icon}</span>
 );
 
+/** Volume and brightness share one row: icon, Apple's 16 squares, step count (NotchHUDView). */
 function HudRow({ kind, level }: { kind: "volume" | "brightness"; level: number }) {
-  const value = kind === "volume" ? Math.round(level * VOLUME_STEPS) : Math.round(level * 100);
   return (
     <DropRow>
       {hudIcon(kind === "volume" ? <SpeakerIcon size={pt(18)} level={level} /> : <SunIcon size={pt(18)} level={level} />)}
-      {kind === "volume" ? (
-        <SegmentedLevel level={level} square={12} />
-      ) : (
-        <div className="n-bar">
-          <span style={{ width: `max(${pt(6)}, ${level * 100}%)`, opacity: level > 0.001 ? 1 : 0 }} />
-        </div>
-      )}
+      <SegmentedLevel level={level} square={12} />
       <span className="n-value" style={{ width: pt(28), flex: "none" }}>
-        {value}
+        {Math.round(level * VOLUME_STEPS)}
       </span>
     </DropRow>
   );

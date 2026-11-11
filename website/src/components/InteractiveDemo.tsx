@@ -95,7 +95,7 @@ export function InteractiveDemo() {
       volume: clamp(Math.round((d.muted ? 0 : d.volume) * VOLUME_STEPS + delta) / VOLUME_STEPS),
     }));
   const stepBrightness = (delta: number) =>
-    setData((d) => ({ ...d, brightness: clamp(Math.round(d.brightness * 16 + delta) / 16) }));
+    setData((d) => ({ ...d, brightness: clamp(Math.round(d.brightness * VOLUME_STEPS + delta) / VOLUME_STEPS) }));
 
   const keyboards = site.sample.keyboards;
   const popupButtons: { label: string; popup: (current: Popup) => Popup }[] = [
@@ -229,7 +229,7 @@ export function InteractiveDemo() {
           <p className="max-w-md text-sm text-muted">{site.demo.hints[tab]}</p>
           <p className="sr-only" aria-live="polite">
             {tab === "volume" && `Volume ${Math.round(level * VOLUME_STEPS)} of ${VOLUME_STEPS}`}
-            {tab === "brightness" && `Brightness ${Math.round(data.brightness * 100)} percent`}
+            {tab === "brightness" && `Brightness ${Math.round(data.brightness * VOLUME_STEPS)} of ${VOLUME_STEPS}`}
             {tab === "popups" && popupText(data.popup)}
             {tab === "timer" && (timerRunning ? "Timer started" : data.timerDone ? "Timer done" : "")}
           </p>

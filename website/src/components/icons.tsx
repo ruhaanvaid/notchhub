@@ -44,26 +44,26 @@ export function SpeakerIcon({ level = 1, ...p }: IconProps & { level?: number })
   );
 }
 
+/** sun.min.fill (dotted rays) below half, sun.max.fill (long rays) at half or above. */
 export function SunIcon({ level = 1, ...p }: IconProps & { level?: number }) {
-  const big = level >= 0.5;
-  const r1 = big ? 7.2 : 6.6;
-  const r2 = big ? 9.6 : 8.4;
+  const rays = Array.from({ length: 8 }, (_, i) => (i * Math.PI) / 4);
+  if (level < 0.5) {
+    return (
+      <Svg {...p}>
+        <circle cx="12" cy="12" r="4.2" />
+        {rays.map((a, i) => (
+          <circle key={i} cx={12 + Math.cos(a) * 8} cy={12 + Math.sin(a) * 8} r="1.25" />
+        ))}
+      </Svg>
+    );
+  }
   return (
     <Svg {...p}>
-      <circle cx="12" cy="12" r={big ? 4.4 : 3.8} />
-      <g stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-        {Array.from({ length: 8 }, (_, i) => {
-          const a = (i * Math.PI) / 4;
-          return (
-            <line
-              key={i}
-              x1={12 + Math.cos(a) * r1}
-              y1={12 + Math.sin(a) * r1}
-              x2={12 + Math.cos(a) * r2}
-              y2={12 + Math.sin(a) * r2}
-            />
-          );
-        })}
+      <circle cx="12" cy="12" r="4.6" />
+      <g stroke="currentColor" strokeWidth="2.1" strokeLinecap="round">
+        {rays.map((a, i) => (
+          <line key={i} x1={12 + Math.cos(a) * 7.4} y1={12 + Math.sin(a) * 7.4} x2={12 + Math.cos(a) * 10.4} y2={12 + Math.sin(a) * 10.4} />
+        ))}
       </g>
     </Svg>
   );
