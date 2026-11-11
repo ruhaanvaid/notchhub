@@ -119,8 +119,19 @@ final class NowPlayingService {
     @ObservationIgnored private var isRefreshing = false
     @ObservationIgnored private var needsAnotherRefresh = false
     @ObservationIgnored private var artworkKey: String?
-    /// The player that most recently reported a change; preferred when both are playing.
-    @ObservationIgnored private var lastActivePlayer: MediaPlayer?
+    /// The source that was playing most recently; preferred when several are playing or
+    /// nothing is.
+    @ObservationIgnored private var lastActivePlayer: MediaPlayer? = UserDefaults.standard
+        .string(forKey: NowPlayingService.lastPlayedKey).flatMap(MediaPlayer.init(rawValue:)) {
+        didSet {
+            // Remembered across restarts and updates, so the panel keeps showing what you
+            // last played instead of an old paused track.
+            if lastActivePlayer != oldValue {
+                UserDefaults.standard.set(lastActivePlayer?.rawValue, forKey: Self.lastPlayedKey)
+            }
+        }
+    }
+    private static let lastPlayedKey = "lastPlayedSource"
 
     private let pollInterval: TimeInterval = 2
 
@@ -130,9 +141,12 @@ final class NowPlayingService {
             guard let name = player.playbackNotification else { continue }
             observers.append(distributed.addObserver(
                 forName: name, object: nil, queue: .main
-            ) { [weak self] _ in
+            ) { [weak self] note in
+                // These fire on pause, track changes and launch too; only real playback
+                // makes this the most recently played source.
+                let isPlaying = (note.userInfo?["Player State"] as? String) == "Playing"
                 MainActor.assumeIsolated {
-                    self?.lastActivePlayer = player
+                    if isPlaying { self?.lastActivePlayer = player }
                     self?.refresh()
                 }
             })
