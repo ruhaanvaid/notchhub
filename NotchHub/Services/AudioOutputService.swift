@@ -15,6 +15,21 @@ struct AudioOutputDevice: Identifiable, Equatable {
         return name
     }
 
+    var isBluetooth: Bool {
+        transportType == kAudioDeviceTransportTypeBluetooth || transportType == kAudioDeviceTransportTypeBluetoothLE
+    }
+
+    /// Icon for the "connected" pop-up.
+    var connectionSymbol: String {
+        let lower = name.lowercased()
+        if lower.contains("airpods max") { return "airpodsmax" }
+        if lower.contains("airpods pro") { return "airpodspro" }
+        if lower.contains("airpods") { return "airpods" }
+        if lower.contains("beats") { return "beats.headphones" }
+        if lower.contains("speaker") || lower.contains("homepod") || lower.contains("sonos") { return "hifispeaker.fill" }
+        return isBluetooth ? "headphones" : symbolName
+    }
+
     var symbolName: String {
         switch transportType {
         case kAudioDeviceTransportTypeBuiltIn:
@@ -45,6 +60,10 @@ final class AudioOutputService {
     }
 
     @ObservationIgnored private var listeners: [CoreAudioListener] = []
+    /// Called when a Bluetooth audio device (AirPods, headphones, speakers) appears.
+    @ObservationIgnored var onDeviceConnected: ((AudioOutputDevice) -> Void)?
+    @ObservationIgnored private var hasLoaded = false
+    @ObservationIgnored private var recentlyAnnounced: [String: Date] = [:]
 
     func start() {
         for selector in [kAudioHardwarePropertyDevices, kAudioHardwarePropertyDefaultOutputDevice] {
@@ -68,6 +87,17 @@ final class AudioOutputService {
             AudioHAL.systemObject, AudioHAL.address(kAudioHardwarePropertyDevices), of: AudioDeviceID.self
         )
         let outputs = ids.compactMap(Self.outputDevice)
+        if hasLoaded {
+            // New devices since the last look. Bluetooth devices can flicker while connecting,
+            // so the same name isn't announced twice within 10 seconds.
+            let known = Set(devices.map(\.id))
+            for device in outputs where !known.contains(device.id) && device.isBluetooth {
+                if let last = recentlyAnnounced[device.name], Date().timeIntervalSince(last) < 10 { continue }
+                recentlyAnnounced[device.name] = Date()
+                onDeviceConnected?(device)
+            }
+        }
+        hasLoaded = true
         if outputs != devices { devices = outputs }
         let current = AudioHAL.defaultOutputDevice
         if current != defaultDeviceID { defaultDeviceID = current }

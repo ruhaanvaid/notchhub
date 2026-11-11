@@ -53,7 +53,10 @@ struct MediaSite: Sendable {
 ///   reads `navigator.mediaSession` and the page's `<video>`/`<audio>` element for the exact
 ///   title and play state, and controls playback by pressing the site's own buttons.
 enum BrowserMedia {
-    enum Command { case playPause, next, previous }
+    enum Command: Equatable {
+        case playPause, next, previous
+        case seek(Double)
+    }
 
     // MARK: - Page scripts (single quotes only; they're embedded in AppleScript strings)
 
@@ -67,7 +70,8 @@ enum BrowserMedia {
         if(h){var parts=[].slice.call(h.children).map(function(c){return c.textContent.trim();}).filter(function(x){return x;});\
         if(parts.length>1){t=parts[0];if(!a){a=parts.slice(1).join(' \\u00b7 ');}}else{t=h.textContent.trim();}}}\
         if(!a){var c=document.querySelector('ytd-watch-metadata ytd-channel-name a');if(c){a=c.textContent.trim();}}\
-        return JSON.stringify({v:!!v,p:!!(v&&!v.paused&&!v.ended),t:t,a:a,art:art});})()
+        var pos=v?v.currentTime:-1;var dur=(v&&isFinite(v.duration))?v.duration:-1;\
+        return JSON.stringify({v:!!v,p:!!(v&&!v.paused&&!v.ended),t:t,a:a,art:art,pos:pos,dur:dur});})()
         """
 
     static func controlJS(_ command: Command) -> String {
@@ -78,6 +82,10 @@ enum BrowserMedia {
             return "(function(){var b=document.querySelector('ytmusic-player-bar .next-button, .ytp-next-button, [data-uia=control-next], [data-testid=control-button-skip-forward], .skipControl__next');if(b){b.click();return 'ok';}return 'no';})()"
         case .previous:
             return "(function(){var b=document.querySelector('ytmusic-player-bar .previous-button, [data-testid=control-button-skip-back], .skipControl__previous');if(b){b.click();return 'ok';}if(location.host.indexOf('youtube.com')>=0){var v=document.querySelector('video');if(v){v.currentTime=0;}}return 'ok';})()"
+        case let .seek(seconds):
+            // Netflix's player breaks if its <video> is seeked directly; use its player API.
+            let to = String(format: "%.2f", max(0, seconds))
+            return "(function(){var s=\(to);if(location.host.indexOf('netflix.com')>=0){try{var vp=netflix.appContext.state.playerApp.getAPI().videoPlayer;var p=vp.getVideoPlayerBySessionId(vp.getAllPlayerSessionIds()[0]);p.seek(Math.round(s*1000));return 'ok';}catch(e){return 'no';}}var els=[].slice.call(document.querySelectorAll('video,audio'));var v=els.filter(function(e){return !e.paused&&!e.ended;})[0]||els[0];if(!v){return 'no';}v.currentTime=s;return 'ok';})()"
         }
     }
 
@@ -197,11 +205,14 @@ enum BrowserMedia {
             let title = scripted ?? fallbackTitle
             guard !title.isEmpty else { return nil }
             let art = (info["art"] as? String).flatMap { URL(string: $0) } ?? thumbnailURL(for: pageURL)
-            return NowPlayingTrack(
+            var track = NowPlayingTrack(
                 player: browser, title: title, artist: info["a"] as? String ?? "", album: site.name,
                 isPlaying: info["p"] as? Bool ?? false, trackID: videoID(in: pageURL) ?? pageURL + "|" + title,
                 artworkURL: art, tab: tab, canControl: true, pageURL: pageURL
             )
+            if let position = info["pos"] as? Double, position >= 0 { track.position = position }
+            if let duration = info["dur"] as? Double, duration > 0 { track.duration = duration }
+            return track
         }
 
         // JavaScript from Apple Events is off: title (and YouTube thumbnail) only.

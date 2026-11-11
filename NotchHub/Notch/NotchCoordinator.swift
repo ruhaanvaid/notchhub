@@ -24,6 +24,7 @@ final class NotchCoordinator {
     // App-wide state mirrored into every panel.
     private var indicatorVisible = false
     private var shelfHasItems = false
+    private var live: LiveActivity?
 
     init(context: PanelContext) {
         self.context = context
@@ -77,6 +78,12 @@ final class NotchCoordinator {
         entries.values.forEach { $0.state.indicatorVisible = visible }
     }
 
+    /// Now playing and/or timer beside the closed notch; nil hides the wings.
+    func setLive(_ live: LiveActivity?) {
+        self.live = live
+        entries.values.forEach { $0.state.live = live }
+    }
+
     func setShelfHasItems(_ hasItems: Bool) {
         shelfHasItems = hasItems
         applySharedState()
@@ -90,6 +97,7 @@ final class NotchCoordinator {
             entry.state.shelfHasItems = shelfHasItems && settings.shelfEnabled
             entry.state.expandedContentHeight = contentHeight
             entry.state.indicatorVisible = indicatorVisible
+            entry.state.live = live
         }
     }
 

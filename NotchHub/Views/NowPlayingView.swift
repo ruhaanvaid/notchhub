@@ -51,6 +51,19 @@ struct NowPlayingView: View {
                 .help("How to get play, pause and skip buttons for \(track.player.displayName)")
             } else if let track = service.track {
                 HStack(spacing: 6) {
+                    if let favorite = track.isFavorite {
+                        // Music's heart (Spotify's scripting can't like songs).
+                        Button(action: service.toggleFavorite) {
+                            Image(systemName: favorite ? "heart.fill" : "heart")
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(favorite ? Color.pink : NotchStyle.secondary)
+                                .contentTransition(.symbolEffect(.replace))
+                                .frame(width: 26, height: 30)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .help(favorite ? "Remove from Favorites" : "Add to Favorites")
+                    }
                     TransportButton(symbol: "backward.fill", size: 13, action: service.previousTrack)
                     TransportButton(
                         symbol: track.isPlaying ? "pause.fill" : "play.fill",
@@ -213,5 +226,60 @@ extension Color {
             green: Double((rgb >> 8) & 0xFF) / 255,
             blue: Double(rgb & 0xFF) / 255
         )
+    }
+}
+
+/// Elapsed time, a draggable progress bar, and remaining time. Hidden (but keeping its height)
+/// when the source doesn't report a position or length, e.g. live streams.
+struct TrackProgressView: View {
+    let service: NowPlayingService
+
+    /// While dragging, the position under the pointer (seconds).
+    @State private var scrubbing: Double?
+
+    var body: some View {
+        Group {
+            if let track = service.track, let duration = track.duration, duration > 0, track.position != nil {
+                TimelineView(.periodic(from: .now, by: 0.5)) { context in
+                    let position = scrubbing ?? track.currentPosition(at: context.date) ?? 0
+                    HStack(spacing: 8) {
+                        Text(Self.format(position))
+                            .frame(width: 38, alignment: .trailing)
+                        GeometryReader { proxy in
+                            LevelBar(level: position / duration)
+                                .frame(height: 4)
+                                .frame(maxHeight: .infinity)
+                                .contentShape(Rectangle())
+                                .gesture(
+                                    DragGesture(minimumDistance: 0)
+                                        .onChanged { gesture in
+                                            guard track.canControl else { return }
+                                            let fraction = min(max(gesture.location.x / max(proxy.size.width, 1), 0), 1)
+                                            scrubbing = fraction * duration
+                                        }
+                                        .onEnded { _ in
+                                            if let target = scrubbing { service.seek(to: target) }
+                                            scrubbing = nil
+                                        }
+                                )
+                        }
+                        Text("-" + Self.format(max(0, duration - position)))
+                            .frame(width: 42, alignment: .leading)
+                    }
+                    .font(.system(size: 10, weight: .medium).monospacedDigit())
+                    .foregroundStyle(NotchStyle.secondary)
+                }
+            } else {
+                Color.clear
+            }
+        }
+        .frame(height: NotchLayout.progressRowHeight)
+    }
+
+    /// "1:05", "1:02:05".
+    static func format(_ seconds: Double) -> String {
+        let total = max(0, Int(seconds))
+        let hours = total / 3600, minutes = (total % 3600) / 60, secs = total % 60
+        return hours > 0 ? String(format: "%d:%02d:%02d", hours, minutes, secs) : String(format: "%d:%02d", minutes, secs)
     }
 }

@@ -22,7 +22,10 @@ struct ExpandedPanelView: View {
             if settings.showNowPlaying || settings.showAudioControls {
                 VStack(spacing: 14) {
                     if settings.showNowPlaying {
-                        NowPlayingView(service: context.nowPlaying, openSettings: context.openSettings)
+                        VStack(spacing: 6) {
+                            NowPlayingView(service: context.nowPlaying, openSettings: context.openSettings)
+                            TrackProgressView(service: context.nowPlaying)
+                        }
                     }
                     if settings.showAudioControls {
                         VolumeRow(volume: context.volume)

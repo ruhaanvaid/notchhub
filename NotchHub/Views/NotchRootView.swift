@@ -17,6 +17,7 @@ struct NotchRootView: View {
         .environment(\.colorScheme, .dark)
         .animation(Self.spring, value: state.mode)
         .animation(Self.spring, value: state.indicatorVisible)
+        .animation(Self.spring, value: state.live != nil)
         .animation(Self.spring, value: state.showsShelf)
         .animation(Self.spring, value: state.geometry)
     }
@@ -30,7 +31,10 @@ struct NotchRootView: View {
 
             switch state.mode {
             case .idle:
-                if state.indicatorVisible {
+                if let live = state.live {
+                    LiveWingsView(live: live, notchWidth: geometry.notchSize.width, height: geometry.notchSize.height)
+                        .transition(.opacity.animation(.easeOut(duration: 0.2)))
+                } else if state.indicatorVisible {
                     IndicatorDot(notchSize: geometry.notchSize)
                         .transition(.opacity)
                 }
@@ -39,8 +43,6 @@ struct NotchRootView: View {
                 NotchHUDView(
                     kind: kind,
                     level: level,
-                    notchWidth: geometry.notchSize.width,
-                    wingWidth: NotchLayout.hudWingWidth(for: geometry, kind: kind),
                     height: geometry.notchSize.height,
                     hasCamera: geometry.hasHardwareNotch
                 )

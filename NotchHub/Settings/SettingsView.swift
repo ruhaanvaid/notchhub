@@ -41,6 +41,27 @@ struct SettingsView: View {
                 }
             }
 
+            Section("Notch Activities") {
+                Toggle(isOn: $settings.liveNowPlaying) {
+                    Text("Show what's playing in the closed notch")
+                    Text("Album art and moving audio bars beside the notch while something plays.")
+                }
+                .disabled(!settings.showNowPlaying)
+                Toggle(isOn: $settings.batteryAlerts) {
+                    Text("Charging and low battery")
+                    Text("A pop-up when you plug in, and a warning at 20% and 10%.")
+                }
+                Toggle(isOn: $settings.deviceAlerts) {
+                    Text("Headphones and speakers connecting")
+                    Text("AirPods and other Bluetooth audio devices.")
+                }
+                Toggle("Caps Lock and keyboard language", isOn: $settings.keyboardAlerts)
+                Toggle(isOn: $settings.showTimer) {
+                    Text("Timer button")
+                    Text("5, 10 or 25 minutes; the countdown shows beside the notch and a sound plays when it's done.")
+                }
+            }
+
             Section("Volume & Brightness") {
                 permissionRow
                 Toggle("Replace the volume overlay", isOn: $settings.replaceVolumeHUD)

@@ -12,6 +12,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let focus = FocusService()
     let shelf = ShelfStore()
     let updates = UpdateService()
+    let battery = BatteryService()
+    let keyboard = KeyboardStatusService()
+    let timer = TimerService()
 
     private var coordinator: NotchCoordinator?
     private var statusItemController: StatusItemController?
@@ -36,6 +39,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             power: power,
             focus: focus,
             shelf: shelf,
+            timer: timer,
             openSettings: { [weak self] in self?.settingsWindowController.show() }
         )
         let coordinator = NotchCoordinator(context: context)
@@ -93,6 +97,36 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         updates.start()
 
+        // Pop-ups from the notch: charger, low battery, headphones, Caps Lock, keyboard, timer.
+        battery.onEvent = { [weak coordinator] kind, level in coordinator?.showHUD(kind, level: level) }
+        battery.start()
+        keyboard.onEvent = { [weak coordinator] kind in coordinator?.showHUD(kind, level: 0) }
+        keyboard.start()
+        outputs.onDeviceConnected = { [weak coordinator] device in
+            guard AppSettings.shared.deviceAlerts else { return }
+            coordinator?.showHUD(.device(name: device.name, symbol: device.connectionSymbol), level: 0)
+        }
+        timer.onFinished = { [weak coordinator] in coordinator?.showHUD(.timerDone, level: 0) }
+
+        // Live activity beside the closed notch: what's playing, and/or a running timer.
+        observeChanges { [weak self] in
+            guard let self else { return }
+            let settings = AppSettings.shared
+            let track = self.nowPlaying.track
+            let showsMedia = settings.liveNowPlaying && settings.showNowPlaying && (track?.isPlaying ?? false)
+            let timerEnd = settings.showTimer ? self.timer.endDate : nil
+            let live: LiveActivity? = (showsMedia || timerEnd != nil)
+                ? LiveActivity(
+                    artwork: showsMedia ? self.nowPlaying.artwork : nil,
+                    tint: self.nowPlaying.artworkTint,
+                    isPlaying: showsMedia,
+                    timerEnd: timerEnd,
+                    showsMedia: showsMedia
+                )
+                : nil
+            DispatchQueue.main.async { [weak self] in self?.coordinator?.setLive(live) }
+        }
+
         permissions.onAccessibilityChange = { [weak self] trusted in
             self?.updateMediaKeyTap(trusted: trusted)
         }
@@ -101,6 +135,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationWillTerminate(_ notification: Notification) {
         mediaKeyTap?.stop()
+        battery.stop()
+        keyboard.stop()
+        timer.cancel()
         updates.stop()
         power.setKeepAwake(false)
         nowPlaying.stop()

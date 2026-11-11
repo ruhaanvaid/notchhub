@@ -9,5 +9,6 @@ struct PanelContext {
     let power: PowerService
     let focus: FocusService
     let shelf: ShelfStore
+    let timer: TimerService
     let openSettings: () -> Void
 }

@@ -20,6 +20,9 @@ struct HeaderBar: View {
             Color.clear.frame(width: notchWidth > 0 ? notchWidth + 16 : 12)
 
             HStack(spacing: 8) {
+                if settings.showTimer {
+                    TimerMenu(timer: context.timer, size: circleSize)
+                }
                 if settings.showKeepAwake {
                 ToggleCircle(
                     symbol: "cup.and.saucer.fill",
@@ -218,5 +221,38 @@ private struct ToggleCircle: View {
         .disabled(isBusy)
         .help(help)
         .animation(.easeOut(duration: 0.15), value: isOn)
+    }
+}
+
+/// Round timer button: pick 5, 10 or 25 minutes; while running it's filled orange and
+/// offers Cancel.
+private struct TimerMenu: View {
+    let timer: TimerService
+    let size: CGFloat
+
+    var body: some View {
+        Menu {
+            ForEach(TimerService.presets, id: \.self) { minutes in
+                Button("\(minutes) minutes") { timer.start(minutes: minutes) }
+            }
+            if timer.isRunning {
+                Divider()
+                Button("Cancel Timer", role: .destructive) { timer.cancel() }
+            }
+        } label: {
+            ZStack {
+                Circle().fill(timer.isRunning ? Color.orange : NotchStyle.fillStrong)
+                Image(systemName: "timer")
+                    .font(.system(size: size * 0.42, weight: .semibold))
+                    .foregroundStyle(timer.isRunning ? Color.black : NotchStyle.primary)
+            }
+            .frame(width: size, height: size)
+            .contentShape(Circle())
+        }
+        .menuStyle(.button)
+        .buttonStyle(.plain)
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .help(timer.isRunning ? "Timer running" : "Start a timer")
     }
 }

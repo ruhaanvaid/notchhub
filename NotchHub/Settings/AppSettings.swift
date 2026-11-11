@@ -27,6 +27,15 @@ final class AppSettings {
     var showMainScreenPill: Bool { didSet { store(showMainScreenPill, Key.showMainScreenPill) } }
     var hideInFullScreen: Bool { didSet { store(hideInFullScreen, Key.hideInFullScreen) } }
 
+    // Notch activities
+    /// Album art and audio bars beside the closed notch while something plays.
+    var liveNowPlaying: Bool { didSet { store(liveNowPlaying, Key.liveNowPlaying) } }
+    var batteryAlerts: Bool { didSet { store(batteryAlerts, Key.batteryAlerts) } }
+    var deviceAlerts: Bool { didSet { store(deviceAlerts, Key.deviceAlerts) } }
+    /// Caps Lock and keyboard-language pop-ups.
+    var keyboardAlerts: Bool { didSet { store(keyboardAlerts, Key.keyboardAlerts) } }
+    var showTimer: Bool { didSet { store(showTimer, Key.showTimer) } }
+
     // Updates
     /// Once a day, ask GitHub whether a newer release exists.
     var checkForUpdates: Bool { didSet { store(checkForUpdates, Key.checkForUpdates) } }
@@ -48,6 +57,11 @@ final class AppSettings {
         static let showMainScreenPill = "showMainScreenPill"
         static let hideInFullScreen = "hideInFullScreen"
         static let checkForUpdates = "checkForUpdates"
+        static let liveNowPlaying = "liveNowPlaying"
+        static let batteryAlerts = "batteryAlerts"
+        static let deviceAlerts = "deviceAlerts"
+        static let keyboardAlerts = "keyboardAlerts"
+        static let showTimer = "showTimer"
     }
 
     init(defaults: UserDefaults = .standard) {
@@ -65,6 +79,11 @@ final class AppSettings {
             Key.showMainScreenPill: true,
             Key.hideInFullScreen: true,
             Key.checkForUpdates: true,
+            Key.liveNowPlaying: true,
+            Key.batteryAlerts: true,
+            Key.deviceAlerts: true,
+            Key.keyboardAlerts: true,
+            Key.showTimer: true,
         ])
         replaceVolumeHUD = defaults.bool(forKey: Key.replaceVolumeHUD)
         replaceBrightnessHUD = defaults.bool(forKey: Key.replaceBrightnessHUD)
@@ -79,6 +98,11 @@ final class AppSettings {
         showMainScreenPill = defaults.bool(forKey: Key.showMainScreenPill)
         hideInFullScreen = defaults.bool(forKey: Key.hideInFullScreen)
         checkForUpdates = defaults.bool(forKey: Key.checkForUpdates)
+        liveNowPlaying = defaults.bool(forKey: Key.liveNowPlaying)
+        batteryAlerts = defaults.bool(forKey: Key.batteryAlerts)
+        deviceAlerts = defaults.bool(forKey: Key.deviceAlerts)
+        keyboardAlerts = defaults.bool(forKey: Key.keyboardAlerts)
+        showTimer = defaults.bool(forKey: Key.showTimer)
     }
 
     private func store(_ value: Any, _ key: String) {

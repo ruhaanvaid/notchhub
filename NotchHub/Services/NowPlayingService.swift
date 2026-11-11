@@ -76,6 +76,27 @@ struct NowPlayingTrack: Equatable {
     var canControl: Bool = true
     /// The browser tab's address, for browser media (used to fetch the site's icon).
     var pageURL: String? = nil
+    /// Playback position and length in seconds, when the source reports them.
+    var position: Double? = nil
+    var duration: Double? = nil
+    /// When `position` was read, to advance it smoothly between polls.
+    var positionDate: Date = Date()
+    /// Music's favourite (heart); nil where the source has no such thing.
+    var isFavorite: Bool? = nil
+
+    /// The position now, advanced since it was read if playing.
+    func currentPosition(at date: Date = Date()) -> Double? {
+        guard let position else { return nil }
+        let advanced = isPlaying ? position + date.timeIntervalSince(positionDate) : position
+        return duration.map { min(advanced, $0) } ?? advanced
+    }
+
+    /// Same item in the same state (ignores the moving position), for logging and artwork.
+    func isSameItem(as other: NowPlayingTrack?) -> Bool {
+        guard let other else { return false }
+        return player == other.player && trackID == other.trackID && title == other.title
+            && isPlaying == other.isPlaying && canControl == other.canControl
+    }
 
     /// Second line: the artist/channel, or where it's playing ("Netflix · Google Chrome").
     /// When the title is just the site's name (Netflix tabs are titled "Netflix"), only the
@@ -115,6 +136,7 @@ final class NowPlayingService {
     @ObservationIgnored private var observers: [NSObjectProtocol] = []
     @ObservationIgnored private var workspaceObservers: [NSObjectProtocol] = []
     @ObservationIgnored private var pollTimer: Timer?
+    @ObservationIgnored private var browserWatchTimer: Timer?
     @ObservationIgnored private var isPanelOpen = false
     @ObservationIgnored private var isRefreshing = false
     @ObservationIgnored private var needsAnotherRefresh = false
@@ -195,6 +217,28 @@ final class NowPlayingService {
     func playPause() { send(.playPause) }
     func nextTrack() { send(.next) }
     func previousTrack() { send(.previous) }
+    func seek(to seconds: Double) {
+        if var current = track {
+            // Move the bar immediately; the next poll confirms.
+            current.position = seconds
+            current.positionDate = Date()
+            track = current
+        }
+        send(.seek(seconds))
+    }
+
+    /// Music's heart. (Spotify's scripting has no way to like or save a song.)
+    func toggleFavorite() {
+        guard let current = track, current.player == .music, let favorite = current.isFavorite else { return }
+        var updated = current
+        updated.isFavorite = !favorite
+        track = updated
+        let source = "tell application id \"com.apple.Music\" to set favorited of current track to \(!favorite)"
+        Task {
+            _ = await runner.run(source)
+            refresh()
+        }
+    }
 
     func openAutomationSettings() {
         let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Automation")!
@@ -213,6 +257,7 @@ final class NowPlayingService {
             case .playPause: verb = "playpause"
             case .next: verb = "next track"
             case .previous: verb = "previous track"
+            case let .seek(seconds): verb = "set player position to \(String(format: "%.2f", seconds))"
             }
             source = "tell application id \"\(track.player.bundleIdentifier)\" to \(verb)"
         }
@@ -277,13 +322,13 @@ final class NowPlayingService {
 
         permissionDenied = denied
         let chosen = choose(from: candidates)
-        if chosen != track {
+        if !(chosen?.isSameItem(as: track) ?? (track == nil)) {
             let summary = candidates.map {
                 "\($0.player.displayName)/\($0.album.isEmpty ? "-" : $0.album) playing=\($0.isPlaying) controls=\($0.canControl)"
             }.joined(separator: "; ")
             log.info("showing \(chosen.map { "\($0.player.displayName) \($0.album)" } ?? "nothing", privacy: .public) from [\(summary, privacy: .public)]")
-            track = chosen
         }
+        if chosen != track { track = chosen }
         if let chosen { lastActivePlayer = chosen.isPlaying ? chosen.player : lastActivePlayer }
         await updateArtwork(for: chosen)
         updatePolling()
@@ -317,6 +362,22 @@ final class NowPlayingService {
         } else if !shouldPoll {
             pollTimer?.invalidate()
             pollTimer = nil
+        }
+
+        // While not polling, watch cheaply for a browser starting to play (its power
+        // assertion), so the closed notch's live wings appear without opening the panel.
+        // Music and Spotify announce playback themselves.
+        let shouldWatch = !shouldPoll && AppSettings.shared.showNowPlaying && AppSettings.shared.includeBrowserMedia
+        if shouldWatch, browserWatchTimer == nil {
+            browserWatchTimer = Timer.scheduledTimer(withTimeInterval: 3, repeats: true) { [weak self] _ in
+                MainActor.assumeIsolated {
+                    guard let self, !AudioActivity.playingBrowsers().isEmpty else { return }
+                    self.refresh()
+                }
+            }
+        } else if !shouldWatch {
+            browserWatchTimer?.invalidate()
+            browserWatchTimer = nil
         }
     }
 
@@ -393,6 +454,9 @@ final class NowPlayingService {
         let artworkLine = player == .spotify
             ? "try\n set artURL to artwork url of theTrack\n end try"
             : ""
+        let favoriteLine = player == .music
+            ? "try\n set favText to (favorited of theTrack) as string\n end try"
+            : ""
         return """
             tell application id "\(player.bundleIdentifier)"
                 set sepChar to character id 30
@@ -417,7 +481,17 @@ final class NowPlayingService {
                     set trackIdent to \(idField) of theTrack
                 end try
                 \(artworkLine)
-                return playerState & sepChar & trackName & sepChar & trackArtist & sepChar & trackAlbum & sepChar & trackIdent & sepChar & artURL
+                set posText to ""
+                set durText to ""
+                set favText to ""
+                try
+                    set posText to (player position) as string
+                end try
+                try
+                    set durText to (duration of theTrack) as string
+                end try
+                \(favoriteLine)
+                return playerState & sepChar & trackName & sepChar & trackArtist & sepChar & trackAlbum & sepChar & trackIdent & sepChar & artURL & sepChar & posText & sepChar & durText & sepChar & favText
             end tell
             """
     }
@@ -439,7 +513,7 @@ final class NowPlayingService {
         guard fields.count >= 6 else { return nil }
         let title = fields[1]
         guard !title.isEmpty else { return nil }
-        return NowPlayingTrack(
+        var track = NowPlayingTrack(
             player: player,
             title: title,
             artist: fields[2],
@@ -448,5 +522,17 @@ final class NowPlayingService {
             trackID: fields[4],
             artworkURL: URL(string: fields[5])
         )
+        // AppleScript formats reals with the user's decimal separator.
+        func number(_ text: String) -> Double? { Double(text.replacingOccurrences(of: ",", with: ".")) }
+        if fields.count >= 9 {
+            track.position = number(fields[6])
+            if var length = number(fields[7]), length > 0 {
+                // Spotify reports milliseconds despite its dictionary saying seconds.
+                if player == .spotify, length > 10_000 { length /= 1000 }
+                track.duration = length
+            }
+            track.isFavorite = player == .music && !fields[8].isEmpty ? fields[8] == "true" : nil
+        }
+        return track
     }
 }

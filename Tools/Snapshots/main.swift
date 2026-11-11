@@ -25,8 +25,8 @@ enum Snapshots {
             return true
         }
         nowPlaying.setPreview(
-            track: NowPlayingTrack(player: .spotify, title: "Blinding Lights", artist: "The Weeknd", album: "After Hours",
-                                   isPlaying: true, trackID: "1", artworkURL: nil),
+            track: NowPlayingTrack(player: .music, title: "Blinding Lights", artist: "The Weeknd", album: "After Hours",
+                                   isPlaying: false, trackID: "1", artworkURL: nil, position: 83, duration: 200, isFavorite: true),
             artwork: art
         )
         let volume = VolumeService(); volume.refresh()
@@ -35,7 +35,7 @@ enum Snapshots {
         let focus = FocusService()
         let shelfStore = ShelfStore(storeURL: tmp.appendingPathComponent("shelf.json"))
         let context = PanelContext(nowPlaying: nowPlaying, volume: volume, outputs: outputs, power: power,
-                                   focus: focus, shelf: shelfStore, openSettings: {})
+                                   focus: focus, shelf: shelfStore, timer: TimerService(), openSettings: {})
 
         let notch = NotchGeometry(displayID: 1, screenFrame: CGRect(x: 0, y: 0, width: 1728, height: 1117),
                                   notchSize: CGSize(width: 185, height: 32), centerX: 864, hasHardwareNotch: true)
@@ -80,6 +80,23 @@ enum Snapshots {
         render("4e-hud-volume-notch-fine", geometry: notch) { $0.showHUD(.volume, level: 10.25 / 16) }
         render("4f-hud-volume-pill-11", geometry: pill) { $0.showHUD(.volume, level: 11.0 / 16) }
         render("4g-hud-volume-notch-muted", geometry: notch) { $0.showHUD(.volume, level: 0) }
+        render("5a-brightness-notch", geometry: notch) { $0.showHUD(.brightness, level: 7.0 / 16) }
+        render("5b-charging", geometry: notch) { $0.showHUD(.battery(charging: true), level: 0.64) }
+        render("5c-low-battery", geometry: notch) { $0.showHUD(.battery(charging: false), level: 0.1) }
+        render("5d-airpods", geometry: notch) { $0.showHUD(.device(name: "Ruhaan's AirPods Pro", symbol: "airpodspro"), level: 0) }
+        render("5e-capslock", geometry: notch) { $0.showHUD(.capsLock(on: true), level: 0) }
+        render("5f-input", geometry: notch) { $0.showHUD(.inputSource(name: "French"), level: 0) }
+        render("5g-timer-done", geometry: notch) { $0.showHUD(.timerDone, level: 0) }
+        render("5h-charging-pill", geometry: pill) { $0.showHUD(.battery(charging: true), level: 0.64) }
+        render("6a-live-playing", geometry: notch) {
+            $0.live = LiveActivity(artwork: art, tint: .systemPink, isPlaying: true, timerEnd: nil, showsMedia: true)
+        }
+        render("6b-live-timer-and-music", geometry: notch) {
+            $0.live = LiveActivity(artwork: art, tint: .systemPink, isPlaying: true, timerEnd: Date().addingTimeInterval(24 * 60 + 37), showsMedia: true)
+        }
+        render("6c-live-pill", geometry: pill) {
+            $0.live = LiveActivity(artwork: art, tint: .systemPink, isPlaying: true, timerEnd: nil, showsMedia: true)
+        }
         render("4c-hud-brightness-notch", geometry: notch) { $0.showHUD(.brightness, level: 0.06) }
         render("4d-hud-volume-pill-100", geometry: pill) { $0.showHUD(.volume, level: 1.0) }
         render("5-expanded", geometry: notch) { $0.expand() }

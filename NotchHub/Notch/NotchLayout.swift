@@ -24,26 +24,31 @@ enum NotchLayout {
     static let hudDropWidth: CGFloat = 340
     static let hudDropHeight: CGFloat = 38
 
-    /// Extra width on each side of a pill while its (single-row) HUD is showing. A pill has no camera
-    /// to work around, so its HUD can be more compact.
+    /// Extra width on each side of a pill while its single-row pop-up is showing (a hardware
+    /// notch's pop-up drops down instead; see `hudDropWidth`).
     static func hudWingWidth(for geometry: NotchGeometry, kind: HUDKind = .brightness) -> CGFloat {
-        switch (geometry.hasHardwareNotch, kind) {
-        case (true, .volume): return 104 // 16 small squares beside the camera, without a wide HUD
-        case (true, .brightness): return 88
-        case (false, .volume): return 80
-        case (false, .brightness): return 64
+        switch kind {
+        case .volume, .brightness: return 80   // 16 squares
+        case .battery, .device: return 96      // label + value
+        case .capsLock, .inputSource, .timerDone: return 72
         }
     }
+
+    /// Wings beside the closed notch for a live activity (artwork + audio bars or countdown).
+    static let liveWingWidth: CGFloat = 46
     /// Extra width on each side of the idle notch while the indicator dot is showing.
     /// (Nothing can be drawn inside the hardware notch: it has no pixels.)
     static let indicatorWingWidth: CGFloat = 16
     /// Extra height of the expanded panel while the shelf row is showing.
     static let shelfRowHeight: CGFloat = 68
+    /// Height of the track progress row (time, bar, time) under now playing.
+    static let progressRowHeight: CGFloat = 16
+
     /// Content height for the enabled panel sections (keep in sync with ExpandedPanelView).
     static func contentHeight(nowPlaying: Bool, audioControls: Bool) -> CGFloat {
         let topGap: CGFloat = 14, bottomPadding: CGFloat = 16, rowGap: CGFloat = 14
         var height = bottomPadding + 4
-        if nowPlaying { height += topGap + 56 }
+        if nowPlaying { height += topGap + 56 + 6 + progressRowHeight }
         if audioControls { height += (nowPlaying ? rowGap : topGap) + 20 }
         return height
     }
@@ -56,12 +61,13 @@ enum NotchLayout {
         geometry: NotchGeometry,
         indicator: Bool = false,
         shelf: Bool = false,
-        contentHeight: CGFloat = expandedContentHeight
+        contentHeight: CGFloat = expandedContentHeight,
+        live: Bool = false
     ) -> NotchMetrics {
         let notch = geometry.notchSize
         switch mode {
         case .idle:
-            let wings = indicator ? indicatorWingWidth * 2 : 0
+            let wings = live ? liveWingWidth * 2 : (indicator ? indicatorWingWidth * 2 : 0)
             let size = CGSize(width: notch.width + wings, height: notch.height)
             if geometry.hasHardwareNotch {
                 return NotchMetrics(bodySize: size, topRadius: 6, bottomRadius: 9)
@@ -90,7 +96,8 @@ enum NotchLayout {
     /// animations; mouse pass-through is handled by hit-testing the shape instead.
     static func windowSize(for geometry: NotchGeometry) -> CGSize {
         let shapes = [
-            metrics(for: .idle, geometry: geometry, indicator: true),
+            metrics(for: .idle, geometry: geometry, indicator: true, live: true),
+            metrics(for: .hud(kind: .battery(charging: true), level: 0), geometry: geometry),
             metrics(for: .hud(kind: .volume, level: 0), geometry: geometry),
             metrics(for: .expanded, geometry: geometry, shelf: true),
         ].map(\.shapeSize)

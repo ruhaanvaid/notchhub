@@ -32,6 +32,8 @@ install: release
 	-pkill -x NotchHub
 	rm -rf /Applications/NotchHub.app
 	cp -R $(APP_RELEASE) /Applications/
+	@# Give the previous copy a moment to finish quitting, or `open` can fail with -600.
+	sleep 1
 	open /Applications/NotchHub.app
 
 # Zip for a GitHub release: build/dist/NotchHub-<version>.zip
