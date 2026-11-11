@@ -275,15 +275,17 @@ final class NowPlayingService {
         updatePolling()
     }
 
-    /// Picks what to show. In order of preference: something playing (the player that changed
-    /// last, if several are), what's already shown, sources with a known play state, then
+    /// Picks what to show. In order of preference: something playing, the player that was
+    /// playing most recently, what's already shown, sources with a known play state, then
     /// Music/Spotify over a browser tab.
     private func choose(from candidates: [NowPlayingTrack]) -> NowPlayingTrack? {
         let current = track
         func score(_ t: NowPlayingTrack) -> (Int, Int, Int, Int, Int) {
             (
                 t.isPlaying ? 1 : 0,
-                t.isPlaying && t.player == lastActivePlayer ? 1 : 0,
+                // The last player that was playing wins ties, so pausing Netflix keeps
+                // Netflix on screen instead of switching to a paused Music track.
+                t.player == lastActivePlayer ? 1 : 0,
                 t.player == current?.player && t.trackID == current?.trackID ? 1 : 0,
                 t.canControl ? 1 : 0,
                 t.player.isBrowser ? 0 : 1

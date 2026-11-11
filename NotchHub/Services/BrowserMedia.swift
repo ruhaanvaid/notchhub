@@ -63,7 +63,9 @@ enum BrowserMedia {
         var m=navigator.mediaSession?navigator.mediaSession.metadata:null;\
         var art='';if(m&&m.artwork&&m.artwork.length){art=m.artwork[m.artwork.length-1].src;}\
         var t=(m&&m.title)?m.title:'';var a=(m&&m.artist)?m.artist:'';\
-        if(!t){var h=document.querySelector('[data-uia=video-title], .atvwebplayersdk-title-text, [data-testid=stream-info-card-component__title]');if(h){t=h.textContent.trim();}}\
+        if(!t){var h=document.querySelector('[data-uia=video-title], .atvwebplayersdk-title-text, [data-testid=stream-info-card-component__title]');\
+        if(h){var parts=[].slice.call(h.children).map(function(c){return c.textContent.trim();}).filter(function(x){return x;});\
+        if(parts.length>1){t=parts[0];if(!a){a=parts.slice(1).join(' \\u00b7 ');}}else{t=h.textContent.trim();}}}\
         if(!a){var c=document.querySelector('ytd-watch-metadata ytd-channel-name a');if(c){a=c.textContent.trim();}}\
         return JSON.stringify({v:!!v,p:!!(v&&!v.paused&&!v.ended),t:t,a:a,art:art});})()
         """
