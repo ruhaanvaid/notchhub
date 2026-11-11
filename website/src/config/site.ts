@@ -11,10 +11,10 @@ export const site = {
   version: "0.6.0",
   /** Download size of the release zip, shown in "How it works". Set to "" to hide. */
   downloadSize: "1.5 MB",
-  /** Replace with the real release URL, e.g. a GitHub "releases/latest" link. */
-  downloadUrl: "#download",
+  /** Every Download button. "releases/latest" always opens the newest GitHub release. */
+  downloadUrl: "https://github.com/ruhaanvaid/notchhub/releases/latest",
   githubUrl: "#",
-  contactEmail: "hello@example.com",
+  contactEmail: "ruhaanvaid@gmail.com",
   copyrightHolder: "Ruhaan Vaid",
   copyrightYear: 2026,
 

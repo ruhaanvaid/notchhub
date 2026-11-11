@@ -25,7 +25,7 @@ Stop `npm run dev` before `npm run build`. Both use `.next/`, and a build next t
 
 All copy, links and numbers live in **`src/config/site.ts`**:
 
-- `downloadUrl`: where every Download button points. It's `#download` (the final banner) until you set the real release URL, for example `https://github.com/<user>/notchhub/releases/latest`.
+- `downloadUrl`: where every Download button points. It's the GitHub `releases/latest` page, which always opens the newest release.
 - `version`, `downloadSize`, `requirements`: shown in the hero, How it works and the final banner.
 - `url`: the deployed domain, used for canonical, Open Graph and sitemap links.
 - `githubUrl`, `contactEmail`, `copyrightHolder`.
