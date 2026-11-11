@@ -3,17 +3,21 @@
  * Components read from this file and contain no hard-coded marketing text.
  */
 
+/** Current release. Bump this when you publish a new GitHub release; the download link follows it. */
+const version = "0.6.0";
+const repo = "https://github.com/ruhaanvaid/notchhub";
+
 export const site = {
   name: "NotchHub",
   /** Public URL of the deployed site. Used for canonical and Open Graph links. */
   url: "https://notchhub-one.vercel.app",
-  /** Current release, shown near the download buttons. */
-  version: "0.6.0",
+  /** Current release, shown near the download buttons (set at the top of this file). */
+  version,
   /** Download size of the release zip, shown in "How it works". Set to "" to hide. */
   downloadSize: "1.5 MB",
-  /** Every Download button. "releases/latest" always opens the newest GitHub release. */
-  downloadUrl: "https://github.com/ruhaanvaid/notchhub/releases/latest",
-  githubUrl: "https://github.com/ruhaanvaid/notchhub",
+  /** Every Download button: the release zip itself, so clicking starts the download. */
+  downloadUrl: `${repo}/releases/download/v${version}/NotchHub-${version}.zip`,
+  githubUrl: repo,
   contactEmail: "ruhaanvaid@gmail.com",
   copyrightHolder: "Ruhaan Vaid",
   copyrightYear: 2026,
