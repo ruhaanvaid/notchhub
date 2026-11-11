@@ -19,6 +19,8 @@ npx serve out      # preview the exported site
 
 `npm run lint` runs ESLint.
 
+Stop `npm run dev` before `npm run build`. Both use `.next/`, and a build next to a running dev server can pick up stale CSS. If styles look out of date, delete `.next/` and rebuild.
+
 ## Edit content
 
 All copy, links and numbers live in **`src/config/site.ts`**:

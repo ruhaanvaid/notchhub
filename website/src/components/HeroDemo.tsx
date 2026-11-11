@@ -116,39 +116,37 @@ export function HeroDemo() {
   const shown: NotchData = userPaused === null && reducedMotion ? { ...data, mode: "playing" } : data;
 
   return (
-    <div ref={ref}>
+    <div ref={ref} className="relative">
+      {/* Hidden until focused with the keyboard: a looping animation needs a way to stop it (WCAG 2.2.2). */}
+      <button type="button" onClick={toggle} className="focus-reveal">
+        {paused ? <PlayIcon size={12} /> : <PauseIcon size={12} />}
+        {paused ? "Play animation" : "Pause animation"}
+      </button>
       <div role="img" aria-label={site.hero.demoLabel}>
         <div aria-hidden="true">
           <NotchView data={shown} displayHeight={290} />
         </div>
       </div>
-      <div className="mt-5 flex items-center justify-end gap-4 px-1 sm:justify-between">
-        <ul className="hidden flex-wrap gap-x-4 gap-y-1 text-[0.8125rem] text-faint sm:flex" aria-hidden="true">
-          {LABEL_MODES.map((mode) => (
-            <li
-              key={mode}
-              className={`flex items-center gap-1.5 transition-colors duration-300 ${
-                shown.mode === mode ? "text-ink" : ""
+      <ul
+        className="mt-5 hidden flex-wrap gap-x-4 gap-y-1 px-1 text-[0.8125rem] text-faint sm:flex"
+        aria-hidden="true"
+      >
+        {LABEL_MODES.map((mode) => (
+          <li
+            key={mode}
+            className={`flex items-center gap-1.5 transition-colors duration-300 ${
+              shown.mode === mode ? "text-ink" : ""
+            }`}
+          >
+            <span
+              className={`h-1.5 w-1.5 rounded-full transition-colors duration-300 ${
+                shown.mode === mode ? "bg-accent-1" : "bg-white/20"
               }`}
-            >
-              <span
-                className={`h-1.5 w-1.5 rounded-full transition-colors duration-300 ${
-                  shown.mode === mode ? "bg-accent-1" : "bg-white/20"
-                }`}
-              />
-              {site.demo.heroLabels[mode]}
-            </li>
-          ))}
-        </ul>
-        <button
-          type="button"
-          onClick={toggle}
-          className="inline-flex h-9 shrink-0 items-center gap-2 rounded-full px-3 text-[0.8125rem] font-medium text-muted ring-1 ring-line-strong transition-colors hover:bg-white/5 hover:text-ink"
-        >
-          {paused ? <PlayIcon size={12} /> : <PauseIcon size={12} />}
-          {paused ? "Play animation" : "Pause animation"}
-        </button>
-      </div>
+            />
+            {site.demo.heroLabels[mode]}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

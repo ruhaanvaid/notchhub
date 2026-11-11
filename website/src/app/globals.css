@@ -126,6 +126,34 @@ body {
   background: rgb(255 255 255 / 0.08);
 }
 
+/* Visually hidden until it receives keyboard focus (hero pause control). */
+.focus-reveal {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 10;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 2.25rem;
+  padding: 0 0.875rem;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--color-bg);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  white-space: nowrap;
+  clip-path: inset(50%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.focus-reveal:focus-visible {
+  clip-path: none;
+  opacity: 1;
+  pointer-events: auto;
+}
+
 /* ---------- Cards ---------- */
 
 .card {
