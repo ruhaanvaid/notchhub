@@ -6,7 +6,7 @@
 export const site = {
   name: "NotchHub",
   /** Public URL of the deployed site. Used for canonical and Open Graph links. */
-  url: "https://notchhub.app",
+  url: "https://notchhub-one.vercel.app",
   /** Current release, shown near the download buttons. */
   version: "0.6.0",
   /** Download size of the release zip, shown in "How it works". Set to "" to hide. */
