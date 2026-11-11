@@ -144,7 +144,17 @@ struct NowPlayingView: View {
         let tint = service.artworkTint.map(Color.init(nsColor:)) ?? (service.artwork == nil ? siteColor : nil)
         return ZStack {
             shape.fill(NotchStyle.fill)
-            if let image = service.artwork, service.track != nil {
+            if let image = service.artwork, service.track != nil, service.artworkIsLogo {
+                // The site's official icon, shown whole inside the tile.
+                // Small icons are drawn smaller rather than stretched blurry.
+                let side = min(38, max(20, CGFloat(SiteIcons.pixelWidth(of: image)) / 2 * 1.25))
+                Image(nsImage: image)
+                    .resizable()
+                    .interpolation(.high)
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: side, height: side)
+                    .clipShape(RoundedRectangle(cornerRadius: side * 0.22, style: .continuous))
+            } else if let image = service.artwork, service.track != nil {
                 Image(nsImage: image)
                     .resizable()
                     .aspectRatio(contentMode: .fill)

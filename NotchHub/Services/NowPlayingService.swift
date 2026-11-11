@@ -74,6 +74,8 @@ struct NowPlayingTrack: Equatable {
     /// False for YouTube when the browser doesn't allow JavaScript from Apple Events: the title
     /// is known, but not the play state, and there are no controls.
     var canControl: Bool = true
+    /// The browser tab's address, for browser media (used to fetch the site's icon).
+    var pageURL: String? = nil
 
     /// Second line: the artist/channel, or where it's playing ("Netflix · Google Chrome").
     /// When the title is just the site's name (Netflix tabs are titled "Netflix"), only the
@@ -103,6 +105,9 @@ final class NowPlayingService {
     }
     /// Average colour of the artwork, for the glow behind it.
     private(set) var artworkTint: NSColor?
+    /// The artwork is the streaming site's icon rather than album or video art, so it's shown
+    /// smaller, inside a tile.
+    private(set) var artworkIsLogo = false
     /// Set when the user has denied NotchHub control of this player.
     private(set) var permissionDenied: MediaPlayer?
 
@@ -305,6 +310,7 @@ final class NowPlayingService {
         guard let track else {
             artworkKey = nil
             artwork = nil
+            artworkIsLogo = false
             return
         }
         let key = "\(track.player.rawValue):\(track.trackID):\(track.artworkURL?.absoluteString ?? "")"
@@ -312,7 +318,10 @@ final class NowPlayingService {
         artworkKey = key
 
         var image: NSImage?
+        var isLogo = false
         switch track.player {
+        case _ where track.player.isBrowser:
+            (image, isLogo) = await browserArtwork(for: track)
         case .music:
             if case let .success(_, data) = await runner.run(Self.musicArtworkScript), let data {
                 image = NSImage(data: data)
@@ -327,7 +336,33 @@ final class NowPlayingService {
 
         // Ignore the result if the track changed while fetching.
         guard key == artworkKey else { return }
+        artworkIsLogo = isLogo
         artwork = image
+    }
+
+    /// Browser media: album art for music (from the page, else looked up by title), the video's
+    /// own artwork for video sites, and otherwise the site's official icon.
+    private func browserArtwork(for track: NowPlayingTrack) async -> (NSImage?, Bool) {
+        func download(_ url: URL?) async -> NSImage? {
+            guard let url, let (data, _) = try? await URLSession.shared.data(from: url) else { return nil }
+            return NSImage(data: data)
+        }
+        let site = track.site
+        if site?.isMusic == true {
+            // The page's own artwork (needs JavaScript from Apple Events) is the real album art.
+            if track.canControl, let image = await download(track.artworkURL) { return (image, false) }
+            if track.title != site?.name,
+               let image = await download(await AlbumArtLookup.shared.artworkURL(title: track.title, artist: track.artist)) {
+                return (image, false)
+            }
+        }
+        if let image = await download(track.artworkURL) { return (image, false) }
+        if let page = track.pageURL,
+           let data = await SiteIcons.shared.iconData(forPage: page),
+           let image = NSImage(data: data) {
+            return (image, true)
+        }
+        return (nil, false)
     }
 
     // MARK: - Scripts

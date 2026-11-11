@@ -96,6 +96,8 @@ Then grant it again from the onboarding window.
 
 NotchHub finds media tabs in Safari, Chrome, Arc, Brave and Edge: YouTube, YouTube Music, Netflix, Prime Video, Disney+, Hulu, Max, Apple TV+, Twitch, Vimeo, Crunchyroll, Spotify and SoundCloud. (Firefox can't be scripted this way.) It shows the title, plus the thumbnail for YouTube, and knows when the browser is playing from the power assertion browsers hold during playback. No extra permission is needed beyond letting NotchHub control the browser.
 
+For artwork, video sites show their official icon, fetched from the site itself (like a browser's tab icon) and cached for 30 days. Music in a browser (YouTube Music, Spotify, SoundCloud) shows its album cover, looked up by song title and artist with Apple's public iTunes Search; only the title and artist are sent.
+
 When several media tabs are open, NotchHub assumes the playing one is the active tab of your front window. To see exactly which tab is playing and control it from the notch, turn on **Allow JavaScript from Apple Events** in your browser:
 
 - **Chrome, Arc, Brave, Edge:** View › Developer › Allow JavaScript from Apple Events

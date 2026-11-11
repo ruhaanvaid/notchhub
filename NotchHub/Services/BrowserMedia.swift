@@ -38,6 +38,9 @@ struct MediaSite: Sendable {
     static func named(_ name: String) -> MediaSite? {
         all.first { $0.name == name }
     }
+
+    /// Music services: their tracks get album art; video sites get the site's icon.
+    var isMusic: Bool { ["YouTube Music", "Spotify", "SoundCloud"].contains(name) }
 }
 
 /// Media in Safari and Chromium browser tabs (YouTube, Netflix, and the other `MediaSite`s),
@@ -194,8 +197,8 @@ enum BrowserMedia {
             let art = (info["art"] as? String).flatMap { URL(string: $0) } ?? thumbnailURL(for: pageURL)
             return NowPlayingTrack(
                 player: browser, title: title, artist: info["a"] as? String ?? "", album: site.name,
-                isPlaying: info["p"] as? Bool ?? false, trackID: videoID(in: pageURL) ?? pageURL,
-                artworkURL: art, tab: tab, canControl: true
+                isPlaying: info["p"] as? Bool ?? false, trackID: videoID(in: pageURL) ?? pageURL + "|" + title,
+                artworkURL: art, tab: tab, canControl: true, pageURL: pageURL
             )
         }
 
@@ -203,10 +206,16 @@ enum BrowserMedia {
         guard !fallbackTitle.isEmpty else { return nil }
         // Site home pages (e.g. YouTube Music with nothing queued) aren't media.
         if fallbackTitle == site.name, site.name == "YouTube Music" { return nil }
+        // Spotify's web player titles the tab "Song • Artist" while playing.
+        var title = fallbackTitle, artist = ""
+        if site.name == "Spotify", let range = fallbackTitle.range(of: " • ") {
+            title = String(fallbackTitle[..<range.lowerBound])
+            artist = String(fallbackTitle[range.upperBound...])
+        }
         return NowPlayingTrack(
-            player: browser, title: fallbackTitle, artist: "", album: site.name,
-            isPlaying: false, trackID: videoID(in: pageURL) ?? pageURL,
-            artworkURL: thumbnailURL(for: pageURL), tab: tab, canControl: false
+            player: browser, title: title, artist: artist, album: site.name,
+            isPlaying: false, trackID: videoID(in: pageURL) ?? pageURL + "|" + title,
+            artworkURL: thumbnailURL(for: pageURL), tab: tab, canControl: false, pageURL: pageURL
         )
     }
 
