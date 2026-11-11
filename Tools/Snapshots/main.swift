@@ -108,7 +108,7 @@ enum Snapshots {
         do {
             // Form is AppKit-backed, so ImageRenderer can't draw it; render it in an
             // off-screen window and capture the view hierarchy instead.
-            let hosting = NSHostingView(rootView: SettingsView(focus: focus, permissions: PermissionsManager()))
+            let hosting = NSHostingView(rootView: SettingsView(focus: focus, permissions: PermissionsManager(), updates: UpdateService()))
             hosting.frame = NSRect(x: 0, y: 0, width: 480, height: 640)
             let window = NSWindow(contentRect: hosting.frame, styleMask: [.titled], backing: .buffered, defer: false)
             window.appearance = NSAppearance(named: .darkAqua)

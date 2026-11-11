@@ -3,6 +3,7 @@ import SwiftUI
 struct SettingsView: View {
     let focus: FocusService
     let permissions: PermissionsManager
+    let updates: UpdateService
     @Bindable private var settings = AppSettings.shared
 
     @State private var launchAtLogin = LaunchAtLogin.isEnabled
@@ -27,6 +28,16 @@ struct SettingsView: View {
                 Toggle(isOn: $settings.hideInFullScreen) {
                     Text("Hide during full-screen apps")
                     Text("The volume and brightness HUD still appears briefly.")
+                }
+            }
+
+            Section("Updates") {
+                LabeledContent("Version \(UpdateService.currentVersion)") {
+                    updateStatus
+                }
+                Toggle(isOn: $settings.checkForUpdates) {
+                    Text("Check for updates automatically")
+                    Text("Once a day, NotchHub asks GitHub whether a newer version exists. Nothing is downloaded or installed automatically.")
                 }
             }
 
@@ -79,6 +90,31 @@ struct SettingsView: View {
             permissions.refresh()
             launchAtLogin = LaunchAtLogin.isEnabled
             needsApproval = LaunchAtLogin.requiresApproval
+        }
+    }
+
+    @ViewBuilder
+    private var updateStatus: some View {
+        switch updates.status {
+        case .checking:
+            HStack(spacing: 6) {
+                ProgressView().controlSize(.small)
+                Text("Checking…").foregroundStyle(.secondary)
+            }
+        case let .available(release):
+            Button("Download \(release.version)…") { updates.openReleasePage() }
+        case .upToDate:
+            HStack(spacing: 8) {
+                Text("Up to date").foregroundStyle(.secondary)
+                Button("Check Now") { Task { await updates.check() } }
+            }
+        case .failed:
+            HStack(spacing: 8) {
+                Text("Couldn't check").foregroundStyle(.secondary)
+                Button("Try Again") { Task { await updates.check() } }
+            }
+        case .idle:
+            Button("Check Now") { Task { await updates.check() } }
         }
     }
 

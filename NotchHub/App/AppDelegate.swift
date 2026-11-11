@@ -11,12 +11,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let power = PowerService()
     let focus = FocusService()
     let shelf = ShelfStore()
+    let updates = UpdateService()
 
     private var coordinator: NotchCoordinator?
     private var statusItemController: StatusItemController?
     private var mediaKeyController: MediaKeyController?
     private var mediaKeyTap: MediaKeyTap?
-    private lazy var settingsWindowController = SettingsWindowController(focus: focus, permissions: permissions)
+    private lazy var settingsWindowController = SettingsWindowController(
+        focus: focus, permissions: permissions, updates: updates
+    )
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         volume.start()
@@ -70,12 +73,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
 
-        statusItemController = StatusItemController(
+        let statusItem = StatusItemController(
+            updates: updates,
             onSettings: { [weak self] in self?.settingsWindowController.show() },
             onPermissions: { [weak self] in self?.permissions.showOnboarding() }
         )
 
         // The tap can only exist while Accessibility is granted; follow the permission live.
+        statusItemController = statusItem
+        updates.onStatusChange = { [weak statusItem] status in
+            if case .available = status {
+                statusItem?.setUpdateBadge(true)
+            } else if status == .upToDate {
+                statusItem?.setUpdateBadge(false)
+            }
+        }
+        updates.start()
+
         permissions.onAccessibilityChange = { [weak self] trusted in
             self?.updateMediaKeyTap(trusted: trusted)
         }
@@ -84,6 +98,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationWillTerminate(_ notification: Notification) {
         mediaKeyTap?.stop()
+        updates.stop()
         power.setKeepAwake(false)
         nowPlaying.stop()
         outputs.stop()

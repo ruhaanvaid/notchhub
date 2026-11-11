@@ -29,7 +29,7 @@ Requires macOS 14 or later, on Apple silicon or Intel. No third-party dependenci
 5. To replace Apple's volume and brightness overlay, NotchHub asks for one permission. Click **Open Settings** in its welcome window and switch NotchHub on, under **Accessibility** (macOS 14–26) or **Device Control and Data Access** (macOS 27 and later). Everything else works without it.
 6. Optional: set up the [Do Not Disturb shortcuts](#do-not-disturb-setup), and turn on **Launch at login** in Settings.
 
-**Updating:** quit NotchHub, replace the app in Applications with the new download, and open it again. Your settings, shelf and permission carry over.
+**Updating:** from version 0.3.0 on, NotchHub checks GitHub once a day and shows a dot on its menu-bar icon when a new version is out (menu › **Update Available**, or **Check for Updates…** any time). Quit NotchHub, replace the app in Applications with the new download, and open it again. Your settings, shelf and permission carry over. Automatic checks can be turned off in Settings › Updates.
 
 ## Build from source
 

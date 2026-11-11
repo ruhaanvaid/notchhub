@@ -27,6 +27,10 @@ final class AppSettings {
     var showMainScreenPill: Bool { didSet { store(showMainScreenPill, Key.showMainScreenPill) } }
     var hideInFullScreen: Bool { didSet { store(hideInFullScreen, Key.hideInFullScreen) } }
 
+    // Updates
+    /// Once a day, ask GitHub whether a newer release exists.
+    var checkForUpdates: Bool { didSet { store(checkForUpdates, Key.checkForUpdates) } }
+
     static let hudDurationRange: ClosedRange<Double> = 0.5...5
 
     @ObservationIgnored private let defaults: UserDefaults
@@ -43,6 +47,7 @@ final class AppSettings {
         static let shelfEnabled = "shelfEnabled"
         static let showMainScreenPill = "showMainScreenPill"
         static let hideInFullScreen = "hideInFullScreen"
+        static let checkForUpdates = "checkForUpdates"
     }
 
     init(defaults: UserDefaults = .standard) {
@@ -59,6 +64,7 @@ final class AppSettings {
             Key.shelfEnabled: true,
             Key.showMainScreenPill: true,
             Key.hideInFullScreen: true,
+            Key.checkForUpdates: true,
         ])
         replaceVolumeHUD = defaults.bool(forKey: Key.replaceVolumeHUD)
         replaceBrightnessHUD = defaults.bool(forKey: Key.replaceBrightnessHUD)
@@ -72,6 +78,7 @@ final class AppSettings {
         shelfEnabled = defaults.bool(forKey: Key.shelfEnabled)
         showMainScreenPill = defaults.bool(forKey: Key.showMainScreenPill)
         hideInFullScreen = defaults.bool(forKey: Key.hideInFullScreen)
+        checkForUpdates = defaults.bool(forKey: Key.checkForUpdates)
     }
 
     private func store(_ value: Any, _ key: String) {
