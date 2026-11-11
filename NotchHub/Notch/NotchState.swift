@@ -13,6 +13,8 @@ enum HUDKind: Equatable {
     /// Keyboard input source changed (e.g. "ABC", "French").
     case inputSource(name: String)
     case timerDone
+    /// An AI tool needs input or finished (see AIAlertService).
+    case aiAlert(AIAlert)
 
     /// Volume and brightness follow the HUD-duration setting; notices stay a little longer.
     @MainActor var duration: Double {
@@ -21,6 +23,7 @@ enum HUDKind: Equatable {
         case .capsLock, .inputSource: return 1.5
         case .battery, .device: return 2.5
         case .timerDone: return 4
+        case let .aiAlert(alert): return alert.kind == .needsInput ? 8 : 5
         }
     }
 }
@@ -46,6 +49,12 @@ enum NotchMode: Equatable {
 
     var isHUD: Bool {
         if case .hud = self { return true }
+        return false
+    }
+
+    /// An AI alert is up: it's clicked, not hovered open into the panel.
+    var isAIAlert: Bool {
+        if case .hud(.aiAlert, _) = self { return true }
         return false
     }
 }
@@ -103,6 +112,15 @@ final class NotchState {
 
     @ObservationIgnored private var shapeObservers: [@MainActor (NotchMode) -> Void] = []
     @ObservationIgnored private var hudHideTask: Task<Void, Never>?
+    /// Called when a pop-up is clicked (AI alerts jump to the app that raised them).
+    @ObservationIgnored var onHUDTap: ((HUDKind) -> Void)?
+
+    func hudTapped() {
+        guard case let .hud(kind, _) = mode else { return }
+        onHUDTap?(kind)
+        hudHideTask?.cancel()
+        mode = .idle
+    }
 
     /// Shape metrics for the current mode, or nil when there is no screen to draw on.
     var metrics: NotchMetrics? {

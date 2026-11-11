@@ -4,6 +4,7 @@ struct SettingsView: View {
     let focus: FocusService
     let permissions: PermissionsManager
     let updates: UpdateService
+    let aiAlerts: AIAlertService
     @Bindable private var settings = AppSettings.shared
 
     @State private var launchAtLogin = LaunchAtLogin.isEnabled
@@ -61,6 +62,8 @@ struct SettingsView: View {
                     Text("5, 10 or 25 minutes; the countdown shows beside the notch and a sound plays when it's done.")
                 }
             }
+
+            AIAlertsSection(aiAlerts: aiAlerts)
 
             Section("Volume & Brightness") {
                 permissionRow
@@ -261,5 +264,84 @@ private struct FocusSetupSection: View {
                 .foregroundStyle(.orange)
                 .lineLimit(2)
         }
+    }
+}
+
+/// Pop-ups when AI tools need you or finish, via their hooks.
+private struct AIAlertsSection: View {
+    let aiAlerts: AIAlertService
+    @Bindable private var settings = AppSettings.shared
+    @State private var claudeConnected = false
+    @State private var claudeError: String?
+    @State private var copied = false
+
+    var body: some View {
+        Section {
+            Toggle(isOn: $settings.aiAlerts) {
+                Text("Show AI alerts")
+                Text("A pop-up from the notch when an AI tool needs your input or finishes. Click it to jump to that app.")
+            }
+            Toggle("Play a sound when one needs input", isOn: $settings.aiAlertSound)
+                .disabled(!settings.aiAlerts)
+
+            LabeledContent {
+                HStack(spacing: 8) {
+                    if claudeConnected {
+                        Label("Connected", systemImage: "checkmark.circle.fill").foregroundStyle(.green)
+                        Button("Disconnect") { run { try aiAlerts.disconnectClaudeCode() } }
+                    } else {
+                        Button("Connect Claude Code") { run { try aiAlerts.connectClaudeCode() } }
+                    }
+                }
+            } label: {
+                Text("Claude Code")
+                Text("Adds two hooks to ~/.claude/settings.json (a backup is saved next to it). Applies to new Claude Code sessions.")
+            }
+            if let claudeError {
+                Text(claudeError).font(.caption).foregroundStyle(.red)
+            }
+
+            Button("Send a Test Alert") {
+                var components = URLComponents(string: "notchhub://alert")!
+                components.queryItems = [
+                    URLQueryItem(name: "source", value: "Claude Code"),
+                    URLQueryItem(name: "kind", value: "needs-input"),
+                    URLQueryItem(name: "message", value: "This is a test alert from NotchHub"),
+                ]
+                if let url = components.url { aiAlerts.handle(url) }
+            }
+            .disabled(!settings.aiAlerts)
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Other tools (Codex, Gemini CLI, your own scripts) can call this from their hooks:")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                HStack {
+                    Text(verbatim: "/bin/sh \(AIAlertService.helperPath) \"Codex\" done")
+                        .font(.system(size: 10, design: .monospaced))
+                        .textSelection(.enabled)
+                        .lineLimit(2)
+                    Spacer()
+                    Button(copied ? "Copied" : "Copy") {
+                        NSPasteboard.general.clearContents()
+                        NSPasteboard.general.setString("/bin/sh '\(AIAlertService.helperPath)' \"Codex\" done", forType: .string)
+                        copied = true
+                    }
+                }
+            }
+        } header: {
+            Text("AI Alerts")
+        }
+        .onAppear { claudeConnected = aiAlerts.isClaudeCodeConnected }
+    }
+
+    private func run(_ action: () throws -> Void) {
+        do {
+            try action()
+            claudeError = nil
+        } catch {
+            claudeError = "Couldn't update Claude Code's settings: \(error.localizedDescription)"
+        }
+        claudeConnected = aiAlerts.isClaudeCodeConnected
     }
 }

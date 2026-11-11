@@ -10,8 +10,8 @@ settings:
   base:
     SWIFT_VERSION: "5.0"
     MACOSX_DEPLOYMENT_TARGET: "14.0"
-    MARKETING_VERSION: "0.6.0"
-    CURRENT_PROJECT_VERSION: "10"
+    MARKETING_VERSION: "0.7.0"
+    CURRENT_PROJECT_VERSION: "11"
 
 targets:
   NotchHub:
@@ -19,6 +19,11 @@ targets:
     platform: macOS
     sources:
       - path: NotchHub
+        excludes:
+          - "Resources/notchhub-alert"
+      # The AI-alert helper has no file extension, so it's listed as a resource explicitly.
+      - path: NotchHub/Resources/notchhub-alert
+        buildPhase: resources
     info:
       path: NotchHub/Info.plist
       properties:
@@ -29,6 +34,9 @@ targets:
         LSApplicationCategoryType: public.app-category.utilities
         LSUIElement: true
         NSHumanReadableCopyright: "Copyright © 2026 Ruhaan Vaid. MIT License."
+        CFBundleURLTypes:
+          - CFBundleURLName: com.notchhub.app
+            CFBundleURLSchemes: [notchhub]
         NSAppleEventsUsageDescription: "NotchHub controls Music and Spotify to show what's playing and to play, pause, and skip tracks."
     configFiles:
       Debug: Config/Signing.xcconfig

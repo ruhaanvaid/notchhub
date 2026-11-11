@@ -23,6 +23,8 @@ enum NotchLayout {
     /// Notch HUD: width, and the height of the row below the camera.
     static let hudDropWidth: CGFloat = 340
     static let hudDropHeight: CGFloat = 38
+    static let aiAlertWidth: CGFloat = 390
+    static let aiAlertDropHeight: CGFloat = 56
 
     /// Extra width on each side of a pill while its single-row pop-up is showing (a hardware
     /// notch's pop-up drops down instead; see `hudDropWidth`).
@@ -31,6 +33,7 @@ enum NotchLayout {
         case .volume, .brightness: return 80   // 16 squares
         case .battery, .device: return 96      // label + value
         case .capsLock, .inputSource, .timerDone: return 72
+        case .aiAlert: return 150
         }
     }
 
@@ -77,6 +80,11 @@ enum NotchLayout {
         case let .hud(kind, _):
             if geometry.hasHardwareNotch {
                 // Drops down below the camera: a compact bar with the same row as the panel.
+                // AI alerts have two lines (who, and what they need), so they're a bit bigger.
+                if case .aiAlert = kind {
+                    let size = CGSize(width: max(aiAlertWidth, notch.width + 48), height: notch.height + aiAlertDropHeight)
+                    return NotchMetrics(bodySize: size, topRadius: 8, bottomRadius: 22)
+                }
                 let size = CGSize(width: max(hudDropWidth, notch.width + 48), height: notch.height + hudDropHeight)
                 return NotchMetrics(bodySize: size, topRadius: 8, bottomRadius: 20)
             }
@@ -98,6 +106,7 @@ enum NotchLayout {
         let shapes = [
             metrics(for: .idle, geometry: geometry, indicator: true, live: true),
             metrics(for: .hud(kind: .battery(charging: true), level: 0), geometry: geometry),
+            metrics(for: .hud(kind: .aiAlert(AIAlert(source: "", kind: .done, message: "")), level: 0), geometry: geometry),
             metrics(for: .hud(kind: .volume, level: 0), geometry: geometry),
             metrics(for: .expanded, geometry: geometry, shelf: true),
         ].map(\.shapeSize)

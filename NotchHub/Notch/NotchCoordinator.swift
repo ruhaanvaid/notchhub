@@ -18,6 +18,9 @@ final class NotchCoordinator {
     private var screenObserver: NSObjectProtocol?
     private var wasAnyExpanded = false
 
+    /// Called when a pop-up is clicked.
+    var onHUDTap: ((HUDKind) -> Void)?
+
     /// Called when the first panel opens or the last one closes.
     var onAnyExpandedChange: ((Bool) -> Void)?
 
@@ -134,6 +137,7 @@ final class NotchCoordinator {
 
     private func makeEntry(for geometry: NotchGeometry) -> Entry {
         let state = NotchState()
+        state.onHUDTap = { [weak self] kind in self?.onHUDTap?(kind) }
         state.observeShapeChanges { [weak self] _ in self?.updateAnyExpanded() }
 
         let controller = NotchWindowController(state: state, context: context)

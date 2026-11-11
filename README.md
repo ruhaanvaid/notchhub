@@ -5,6 +5,7 @@ A free, open-source macOS menu-bar utility that turns the MacBook notch into a D
 - **Volume and brightness HUD**: replaces Apple's overlay with a pop-up that drops down from the notch, using Apple's 16-step scale (16 squares, with quarter steps on Shift+Option).
 - **Live activity in the closed notch**: album art and animated audio bars beside the notch while something plays, and a countdown while a timer runs.
 - **Pop-ups** for charging and low battery (20% and 10%), headphones connecting, Caps Lock and keyboard-language changes.
+- **AI alerts**: a pop-up when Claude Code, Codex or another AI tool needs your input or finishes a task. Click it to jump to that app.
 - **Hover panel**: now playing (Music, Spotify, and YouTube, Netflix and other streaming sites in Safari, Chrome, Arc, Brave or Edge) with a progress bar you can drag to seek and a favourite button for Music, a 16-step volume control, an audio output picker, and Timer, Keep Awake and Do Not Disturb buttons.
 - **File shelf**: drag files onto the notch to park them, then drag them back out to drop them anywhere.
 - **Works without a notch**: shows a small pill at the top of the main display, either alongside the notch when you use an external monitor or on its own on Macs without one.
@@ -106,6 +107,22 @@ When several media tabs are open, NotchHub assumes the playing one is the active
 - **Safari:** Settings › Advanced › Show features for web developers, then Develop › Allow JavaScript from Apple Events
 
 This option lets any app you've allowed to control that browser run scripts in its pages, so only turn it on if you're comfortable with that. NotchHub only runs a short script on the media tabs listed above, to read the title and play state and press play, pause or next. You can turn browser detection off in Settings › Panel.
+
+## AI alerts
+
+AI coding tools can tell NotchHub when they need you or finish, through their hooks. NotchHub ships a small helper for this:
+
+```
+/bin/sh /Applications/NotchHub.app/Contents/Resources/notchhub-alert SOURCE EVENT [PAYLOAD]
+```
+
+`SOURCE` is the tool's name (it picks the icon). `EVENT` is `needs-input`, `done`, `error` or `info`. An optional JSON payload (Claude Code's or Codex's hook data) adds the message and project name. The helper only opens a `notchhub://` link in the background; nothing is sent anywhere.
+
+- **Claude Code:** Settings › AI Alerts › **Connect Claude Code** adds a Notification hook ("needs your input") and a Stop hook ("finished") to `~/.claude/settings.json`, keeping everything else and saving a backup next to it. It applies to new Claude Code sessions. **Disconnect** removes only NotchHub's hooks.
+- **Codex CLI:** in `~/.codex/config.toml`, set `notify = ["/bin/sh", "/Applications/NotchHub.app/Contents/Resources/notchhub-alert", "Codex", "done"]`.
+- **Anything else** with hooks or a "run a command when done" option can call the helper the same way.
+
+Chat apps without hooks (ChatGPT, Claude chats) can't trigger alerts: macOS doesn't let one app read another's notifications.
 
 ## Do Not Disturb setup
 

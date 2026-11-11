@@ -232,7 +232,7 @@ final class NotchWindowController: NotchDropDelegate {
         if inside {
             collapseTask?.cancel()
             collapseTask = nil
-            if !state.mode.isExpanded, hoverTask == nil {
+            if !state.mode.isExpanded, !state.mode.isAIAlert, hoverTask == nil {
                 scheduleExpand()
             }
         } else {

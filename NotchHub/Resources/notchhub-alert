@@ -1,0 +1,33 @@
+#!/bin/sh
+# notchhub-alert: show an AI alert in NotchHub's notch.
+#
+#   notchhub-alert SOURCE EVENT [PAYLOAD]
+#
+# SOURCE  who's asking, e.g. "Claude Code" or "Codex"
+# EVENT   needs-input | done | error | info, or a hook event name (Notification, Stop)
+# PAYLOAD optional JSON from the tool. If not given as an argument, it's read from stdin
+#         (Claude Code hooks pipe it in; Codex's `notify` passes it as the last argument).
+#
+# Examples
+#   Claude Code hook:  /bin/sh /Applications/NotchHub.app/Contents/Resources/notchhub-alert "Claude Code" Notification
+#   Codex notify:      ["/bin/sh", "/Applications/NotchHub.app/Contents/Resources/notchhub-alert", "Codex", "done"]
+#   Any script:        notchhub-alert "My Agent" done < /dev/null
+#
+# It only opens a notchhub:// link in the background; nothing is sent anywhere else.
+
+SOURCE="${1:-AI}"
+EVENT="${2:-done}"
+
+if [ -n "$3" ]; then
+  PAYLOAD="$3"
+elif [ ! -t 0 ]; then
+  PAYLOAD=$(head -c 16000)
+else
+  PAYLOAD=""
+fi
+
+encode() { printf '%s' "$1" | base64 | tr -d '\n=' | tr '+/' '-_'; }
+
+APP="${__CFBundleIdentifier:-}"
+open -g "notchhub://alert?source=$(encode "$SOURCE")&event=$(encode "$EVENT")&app=$(encode "$APP")&payload=$(encode "$PAYLOAD")" >/dev/null 2>&1 || true
+exit 0

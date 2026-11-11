@@ -15,13 +15,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let battery = BatteryService()
     let keyboard = KeyboardStatusService()
     let timer = TimerService()
+    let aiAlerts = AIAlertService()
 
     private var coordinator: NotchCoordinator?
     private var statusItemController: StatusItemController?
     private var mediaKeyController: MediaKeyController?
     private var mediaKeyTap: MediaKeyTap?
     private lazy var settingsWindowController = SettingsWindowController(
-        focus: focus, permissions: permissions, updates: updates
+        focus: focus, permissions: permissions, updates: updates, aiAlerts: aiAlerts
     )
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -107,6 +108,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             coordinator?.showHUD(.device(name: device.name, symbol: device.connectionSymbol), level: 0)
         }
         timer.onFinished = { [weak coordinator] in coordinator?.showHUD(.timerDone, level: 0) }
+        aiAlerts.onAlert = { [weak coordinator] alert in coordinator?.showHUD(.aiAlert(alert), level: 0) }
+        coordinator.onHUDTap = { [weak self] kind in
+            if case let .aiAlert(alert) = kind { self?.aiAlerts.activate(alert) }
+        }
 
         // Live activity beside the closed notch: what's playing, and/or a running timer.
         observeChanges { [weak self] in
@@ -131,6 +136,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self?.updateMediaKeyTap(trusted: trusted)
         }
         permissions.start()
+    }
+
+    /// `notchhub://alert?…` links from the notchhub-alert helper (AI tool hooks).
+    func application(_ application: NSApplication, open urls: [URL]) {
+        urls.forEach(aiAlerts.handle)
     }
 
     func applicationWillTerminate(_ notification: Notification) {

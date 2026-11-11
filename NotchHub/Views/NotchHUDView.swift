@@ -18,7 +18,7 @@ struct NotchHUDView: View {
                 Color.clear.frame(height: height)
                 row
                     .padding(.horizontal, 18)
-                    .frame(height: NotchLayout.hudDropHeight - 6)
+                    .frame(height: rowHeight)
                 Spacer(minLength: 0)
             }
         } else {
@@ -74,7 +74,15 @@ struct NotchHUDView: View {
                 label("Timer done").frame(maxWidth: .infinity, alignment: .leading)
                 valueText("00:00")
             }
+
+        case let .aiAlert(alert):
+            AIAlertRow(alert: alert, compact: !hasCamera)
         }
+    }
+
+    private var rowHeight: CGFloat {
+        if case .aiAlert = kind { return NotchLayout.aiAlertDropHeight - 8 }
+        return NotchLayout.hudDropHeight - 6
     }
 
     private func icon(_ name: String, color: Color = NotchStyle.primary) -> some View {
@@ -183,6 +191,76 @@ struct LevelBar: View {
                     .frame(width: max(proxy.size.height, proxy.size.width * min(max(level, 0), 1)))
                     .opacity(level > 0.001 ? 1 : 0)
             }
+        }
+    }
+}
+
+/// "Claude Code · notch" / "Needs your permission to use Bash", with the tool's icon and a
+/// status badge. Clicking the pop-up brings the tool's app forward.
+struct AIAlertRow: View {
+    let alert: AIAlert
+    /// Single line, for the short pill on screens without a notch.
+    var compact = false
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Group {
+                if let image = AIAlertService.icon(for: alert) {
+                    Image(nsImage: image).resizable().aspectRatio(contentMode: .fit)
+                } else {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(NotchStyle.primary)
+                }
+            }
+            .frame(width: compact ? 18 : 30, height: compact ? 18 : 30)
+
+            if compact {
+                Text("\(alert.source): \(alert.message)")
+                    .font(.system(size: 12, weight: .semibold))
+                    .lineLimit(1)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            } else {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(alert.title)
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(NotchStyle.secondary)
+                        .lineLimit(1)
+                    Text(alert.message)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(NotchStyle.primary)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
+            Text(badge)
+                .font(.system(size: 10, weight: .bold))
+                .foregroundStyle(.black)
+                .padding(.horizontal, 7)
+                .padding(.vertical, 3)
+                .background(color, in: Capsule())
+                .fixedSize()
+        }
+        .contentShape(Rectangle())
+    }
+
+    private var badge: String {
+        switch alert.kind {
+        case .needsInput: return "Needs you"
+        case .done: return "Done"
+        case .error: return "Error"
+        case .info: return "Update"
+        }
+    }
+
+    private var color: Color {
+        switch alert.kind {
+        case .needsInput: return .orange
+        case .done: return .green
+        case .error: return .red
+        case .info: return Color(white: 0.8)
         }
     }
 }

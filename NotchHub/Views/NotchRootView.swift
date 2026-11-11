@@ -46,6 +46,8 @@ struct NotchRootView: View {
                     height: geometry.notchSize.height,
                     hasCamera: geometry.hasHardwareNotch
                 )
+                .contentShape(Rectangle())
+                .onTapGesture { state.hudTapped() }
                 .transition(.opacity.animation(.easeOut(duration: 0.15)))
 
             case .expanded:

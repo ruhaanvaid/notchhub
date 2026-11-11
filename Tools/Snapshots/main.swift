@@ -94,6 +94,15 @@ enum Snapshots {
         render("6b-live-timer-and-music", geometry: notch) {
             $0.live = LiveActivity(artwork: art, tint: .systemPink, isPlaying: true, timerEnd: Date().addingTimeInterval(24 * 60 + 37), showsMedia: true)
         }
+        render("7a-ai-needs-input", geometry: notch) {
+            $0.showHUD(.aiAlert(AIAlert(source: "Claude Code", kind: .needsInput, message: "Claude needs your permission to use Bash", project: "notch", appBundleID: nil)), level: 0)
+        }
+        render("7b-ai-done", geometry: notch) {
+            $0.showHUD(.aiAlert(AIAlert(source: "Codex", kind: .done, message: "Added the update checker and wrote tests", project: "notch", appBundleID: nil)), level: 0)
+        }
+        render("7c-ai-pill", geometry: pill) {
+            $0.showHUD(.aiAlert(AIAlert(source: "Claude Code", kind: .needsInput, message: "Needs your permission to use Bash", project: nil, appBundleID: nil)), level: 0)
+        }
         render("6c-live-pill", geometry: pill) {
             $0.live = LiveActivity(artwork: art, tint: .systemPink, isPlaying: true, timerEnd: nil, showsMedia: true)
         }
@@ -142,7 +151,7 @@ enum Snapshots {
         do {
             // Form is AppKit-backed, so ImageRenderer can't draw it; render it in an
             // off-screen window and capture the view hierarchy instead.
-            let hosting = NSHostingView(rootView: SettingsView(focus: focus, permissions: PermissionsManager(), updates: UpdateService()))
+            let hosting = NSHostingView(rootView: SettingsView(focus: focus, permissions: PermissionsManager(), updates: UpdateService(), aiAlerts: AIAlertService()))
             hosting.frame = NSRect(x: 0, y: 0, width: 480, height: 640)
             let window = NSWindow(contentRect: hosting.frame, styleMask: [.titled], backing: .buffered, defer: false)
             window.appearance = NSAppearance(named: .darkAqua)
