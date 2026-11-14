@@ -94,7 +94,10 @@ struct SettingsView: View {
                 if settings.showNowPlaying && settings.includeBrowserMedia {
                     YouTubeControlsNote()
                 }
-                Toggle("Volume slider and output picker", isOn: $settings.showAudioControls)
+                Toggle(isOn: $settings.showAudioControls) {
+                    Text("Output picker")
+                    Text("Volume itself shows only when you press the volume keys.")
+                }
                 Toggle("Keep Awake button", isOn: $settings.showKeepAwake)
                 Toggle("Do Not Disturb button", isOn: $settings.showFocus)
                 Toggle(isOn: $settings.shelfEnabled) {

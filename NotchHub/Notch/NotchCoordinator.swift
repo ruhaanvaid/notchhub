@@ -53,7 +53,6 @@ final class NotchCoordinator {
         observeChanges { [weak self] in
             _ = self?.settings.shelfEnabled
             _ = self?.settings.showNowPlaying
-            _ = self?.settings.showAudioControls
             _ = self?.settings.hideInFullScreen
             DispatchQueue.main.async {
                 self?.applySharedState()
@@ -94,7 +93,7 @@ final class NotchCoordinator {
 
     private func applySharedState() {
         let contentHeight = NotchLayout.contentHeight(
-            nowPlaying: settings.showNowPlaying, audioControls: settings.showAudioControls
+            nowPlaying: settings.showNowPlaying
         )
         for entry in entries.values {
             entry.state.shelfHasItems = shelfHasItems && settings.shelfEnabled

@@ -19,17 +19,11 @@ struct ExpandedPanelView: View {
                 height: geometry.notchSize.height
             )
 
-            if settings.showNowPlaying || settings.showAudioControls {
-                VStack(spacing: 14) {
-                    if settings.showNowPlaying {
-                        VStack(spacing: 6) {
-                            NowPlayingView(service: context.nowPlaying, openSettings: context.openSettings)
-                            TrackProgressView(service: context.nowPlaying)
-                        }
-                    }
-                    if settings.showAudioControls {
-                        VolumeRow(volume: context.volume)
-                    }
+            // Volume isn't shown here: it pops up from the notch when you press the volume keys.
+            if settings.showNowPlaying {
+                VStack(spacing: 6) {
+                    NowPlayingView(service: context.nowPlaying, openSettings: context.openSettings)
+                    TrackProgressView(service: context.nowPlaying)
                 }
                 .padding(.top, 14)
             }

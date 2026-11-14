@@ -145,7 +145,6 @@ enum Snapshots {
             artwork: nil
         )
         renderPart("nowplaying-twitch-no-js", NowPlayingView(service: twitch))
-        renderPart("volume", VolumeRow(volume: volume))
         renderPart("shelf", ShelfRowView(shelf: shelfStore, isTargeted: false).frame(height: 56))
 
         do {

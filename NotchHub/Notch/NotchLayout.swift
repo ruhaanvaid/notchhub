@@ -48,11 +48,10 @@ enum NotchLayout {
     static let progressRowHeight: CGFloat = 16
 
     /// Content height for the enabled panel sections (keep in sync with ExpandedPanelView).
-    static func contentHeight(nowPlaying: Bool, audioControls: Bool) -> CGFloat {
-        let topGap: CGFloat = 14, bottomPadding: CGFloat = 16, rowGap: CGFloat = 14
+    static func contentHeight(nowPlaying: Bool) -> CGFloat {
+        let topGap: CGFloat = 14, bottomPadding: CGFloat = 16
         var height = bottomPadding + 4
         if nowPlaying { height += topGap + 56 + 6 + progressRowHeight }
-        if audioControls { height += (nowPlaying ? rowGap : topGap) + 20 }
         return height
     }
 
