@@ -86,7 +86,8 @@ enum Snapshots {
         render("5d-airpods", geometry: notch) { $0.showHUD(.device(name: "Ruhaan's AirPods Pro", symbol: "airpodspro"), level: 0) }
         render("5e-capslock", geometry: notch) { $0.showHUD(.capsLock(on: true), level: 0) }
         render("5f-input", geometry: notch) { $0.showHUD(.inputSource(name: "French"), level: 0) }
-        render("5g-timer-done", geometry: notch) { $0.showHUD(.timerDone, level: 0) }
+        render("5g-timer-alarm", geometry: notch) { $0.showHUD(.timerAlarm, level: 0) }
+        render("5i-timer-alarm-pill", geometry: pill) { $0.showHUD(.timerAlarm, level: 0) }
         render("5h-charging-pill", geometry: pill) { $0.showHUD(.battery(charging: true), level: 0.64) }
         render("6a-live-playing", geometry: notch) {
             $0.live = LiveActivity(artwork: art, tint: .systemPink, isPlaying: true, timerEnd: nil, showsMedia: true)

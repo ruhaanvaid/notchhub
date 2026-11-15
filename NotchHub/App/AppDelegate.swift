@@ -107,10 +107,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             guard AppSettings.shared.deviceAlerts else { return }
             coordinator?.showHUD(.device(name: device.name, symbol: device.connectionSymbol), level: 0)
         }
-        timer.onFinished = { [weak coordinator] in coordinator?.showHUD(.timerDone, level: 0) }
+        // The alarm: a pop-up with Stop and Repeat that stays until one is clicked.
+        timer.onFinished = { [weak coordinator] in coordinator?.showHUD(.timerAlarm, level: 0) }
+        timer.onAlarmStopped = { [weak coordinator] in coordinator?.dismissHUD(.timerAlarm) }
+        coordinator.onHUDAction = { [weak self] action in
+            switch action {
+            case .stopAlarm: self?.timer.stopAlarm()
+            case .repeatTimer: self?.timer.repeatLast()
+            }
+        }
         aiAlerts.onAlert = { [weak coordinator] alert in coordinator?.showHUD(.aiAlert(alert), level: 0) }
         coordinator.onHUDTap = { [weak self] kind in
             if case let .aiAlert(alert) = kind { self?.aiAlerts.activate(alert) }
+            if kind == .timerAlarm { self?.timer.stopAlarm() }
         }
 
         // Live activity beside the closed notch: what's playing, and/or a running timer.

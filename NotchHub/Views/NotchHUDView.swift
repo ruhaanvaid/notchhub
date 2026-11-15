@@ -11,6 +11,8 @@ struct NotchHUDView: View {
     let level: Double
     let height: CGFloat
     let hasCamera: Bool
+    /// Buttons inside the pop-up (the alarm's Stop and Repeat).
+    var onAction: (HUDAction) -> Void = { _ in }
 
     var body: some View {
         if hasCamera {
@@ -68,11 +70,22 @@ struct NotchHUDView: View {
                 valueText("Keyboard")
             }
 
-        case .timerDone:
-            HStack(spacing: 10) {
-                icon("timer", color: .orange)
-                label("Timer done").frame(maxWidth: .infinity, alignment: .leading)
-                valueText("00:00")
+        case .timerAlarm:
+            HStack(spacing: hasCamera ? 10 : 8) {
+                Image(systemName: "alarm.fill")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(.orange)
+                    .modifier(RingingEffect())
+                    .frame(width: 24)
+                label("Timer").frame(maxWidth: .infinity, alignment: .leading)
+                if hasCamera {
+                    AlarmButton(title: "Repeat", tint: NotchStyle.primary, background: NotchStyle.fillStrong) {
+                        onAction(.repeatTimer)
+                    }
+                }
+                AlarmButton(title: "Stop", tint: .black, background: .orange, height: hasCamera ? 24 : 18) {
+                    onAction(.stopAlarm)
+                }
             }
 
         case let .aiAlert(alert):
@@ -261,6 +274,40 @@ struct AIAlertRow: View {
         case .done: return .green
         case .error: return .red
         case .info: return Color(white: 0.8)
+        }
+    }
+}
+
+/// Capsule button in the alarm pop-up.
+private struct AlarmButton: View {
+    let title: String
+    let tint: Color
+    let background: Color
+    var height: CGFloat = 24
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Text(title)
+                .font(.system(size: height < 24 ? 11 : 12, weight: .semibold))
+                .foregroundStyle(tint)
+                .padding(.horizontal, height < 24 ? 10 : 12)
+                .frame(height: height)
+                .background(background, in: Capsule())
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .fixedSize()
+    }
+}
+
+/// The alarm icon shakes like a ringing clock (macOS 15+), or pulses on macOS 14.
+private struct RingingEffect: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(macOS 15, *) {
+            content.symbolEffect(.wiggle, options: .repeating)
+        } else {
+            content.symbolEffect(.pulse, options: .repeating)
         }
     }
 }

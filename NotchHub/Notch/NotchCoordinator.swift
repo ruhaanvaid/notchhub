@@ -20,6 +20,8 @@ final class NotchCoordinator {
 
     /// Called when a pop-up is clicked.
     var onHUDTap: ((HUDKind) -> Void)?
+    /// Called when a button inside a pop-up is clicked.
+    var onHUDAction: ((HUDAction) -> Void)?
 
     /// Called when the first panel opens or the last one closes.
     var onAnyExpandedChange: ((Bool) -> Void)?
@@ -73,6 +75,11 @@ final class NotchCoordinator {
 
     func showHUD(_ kind: HUDKind, level: Double) {
         entries.values.forEach { $0.state.showHUD(kind, level: level) }
+    }
+
+    /// Takes a sticky pop-up (the alarm) down on every screen.
+    func dismissHUD(_ kind: HUDKind) {
+        entries.values.forEach { $0.state.dismissHUD(kind) }
     }
 
     func setIndicatorVisible(_ visible: Bool) {
@@ -137,6 +144,7 @@ final class NotchCoordinator {
     private func makeEntry(for geometry: NotchGeometry) -> Entry {
         let state = NotchState()
         state.onHUDTap = { [weak self] kind in self?.onHUDTap?(kind) }
+        state.onHUDAction = { [weak self] action in self?.onHUDAction?(action) }
         state.observeShapeChanges { [weak self] _ in self?.updateAnyExpanded() }
 
         let controller = NotchWindowController(state: state, context: context)

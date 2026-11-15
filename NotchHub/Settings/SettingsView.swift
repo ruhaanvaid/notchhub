@@ -59,8 +59,13 @@ struct SettingsView: View {
                 Toggle("Caps Lock and keyboard language", isOn: $settings.keyboardAlerts)
                 Toggle(isOn: $settings.showTimer) {
                     Text("Timer button")
-                    Text("Set hours, minutes and seconds on wheels; the countdown shows beside the notch and a sound plays when it's done.")
+                    Text("Set hours, minutes and seconds on wheels; the countdown shows beside the notch, and an alarm rings when it's done until you stop it.")
                 }
+                Picker("Alarm sound", selection: $settings.timerSound) {
+                    ForEach(AlarmSound.choices, id: \.self) { Text($0).tag($0) }
+                }
+                .disabled(!settings.showTimer)
+                .onChange(of: settings.timerSound) { _, name in AlarmSound.preview(name) }
             }
 
             AIAlertsSection(aiAlerts: aiAlerts)

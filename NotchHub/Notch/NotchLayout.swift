@@ -32,7 +32,8 @@ enum NotchLayout {
         switch kind {
         case .volume, .brightness: return 80   // 16 squares
         case .battery, .device: return 96      // label + value
-        case .capsLock, .inputSource, .timerDone: return 72
+        case .capsLock, .inputSource: return 72
+        case .timerAlarm: return 120
         case .aiAlert: return 150
         }
     }

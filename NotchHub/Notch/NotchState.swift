@@ -12,7 +12,8 @@ enum HUDKind: Equatable {
     case capsLock(on: Bool)
     /// Keyboard input source changed (e.g. "ABC", "French").
     case inputSource(name: String)
-    case timerDone
+    /// The timer's alarm is ringing: stays up until Stop or Repeat.
+    case timerAlarm
     /// An AI tool needs input or finished (see AIAlertService).
     case aiAlert(AIAlert)
 
@@ -22,10 +23,19 @@ enum HUDKind: Equatable {
         case .volume, .brightness: return AppSettings.shared.hudDuration
         case .capsLock, .inputSource: return 1.5
         case .battery, .device: return 2.5
-        case .timerDone: return 4
+        case .timerAlarm: return TimerService.alarmLimit
         case let .aiAlert(alert): return alert.kind == .needsInput ? 8 : 5
         }
     }
+
+    /// Stays up until dismissed, and comes back after other pop-ups pass over it.
+    var isSticky: Bool { self == .timerAlarm }
+}
+
+/// A button inside a pop-up.
+enum HUDAction {
+    case stopAlarm
+    case repeatTimer
 }
 
 /// Small "live activity" shown in wings beside the closed notch.
@@ -67,6 +77,12 @@ enum NotchMode: Equatable {
     /// An AI alert is up: it's clicked, not hovered open into the panel.
     var isAIAlert: Bool {
         if case .hud(.aiAlert, _) = self { return true }
+        return false
+    }
+
+    /// A pop-up you click rather than hover open into the panel (AI alerts, the timer alarm).
+    var isClickOnly: Bool {
+        if case let .hud(kind, _) = self { return kind == .timerAlarm || isAIAlert }
         return false
     }
 }
@@ -138,12 +154,36 @@ final class NotchState {
     @ObservationIgnored private var hudHideTask: Task<Void, Never>?
     /// Called when a pop-up is clicked (AI alerts jump to the app that raised them).
     @ObservationIgnored var onHUDTap: ((HUDKind) -> Void)?
+    /// Called when a button inside a pop-up is clicked.
+    @ObservationIgnored var onHUDAction: ((HUDAction) -> Void)?
+    /// A pop-up that stays until dismissed (the timer alarm); shorter pop-ups return to it.
+    @ObservationIgnored private var stickyHUD: HUDKind?
 
     func hudTapped() {
         guard case let .hud(kind, _) = mode else { return }
         onHUDTap?(kind)
         hudHideTask?.cancel()
-        mode = .idle
+        if kind == stickyHUD { stickyHUD = nil }
+        mode = restingMode
+    }
+
+    func hudAction(_ action: HUDAction) {
+        onHUDAction?(action)
+    }
+
+    /// Takes a sticky pop-up down (e.g. the alarm was stopped on another screen).
+    func dismissHUD(_ kind: HUDKind) {
+        guard stickyHUD == kind else { return }
+        stickyHUD = nil
+        if case .hud(kind, _) = mode {
+            hudHideTask?.cancel()
+            mode = .idle
+        }
+    }
+
+    /// What the notch goes back to: the sticky pop-up if there is one, otherwise closed.
+    private var restingMode: NotchMode {
+        stickyHUD.map { .hud(kind: $0, level: 0) } ?? .idle
     }
 
     /// Shape metrics for the current mode, or nil when there is no screen to draw on.
@@ -169,12 +209,20 @@ final class NotchState {
 
     func collapse() {
         hudHideTask?.cancel()
-        mode = .idle
+        mode = restingMode
         page = .main
     }
 
-    /// Shows the HUD and restarts its hide timer. Ignored while the panel is expanded.
+    /// Shows the HUD and restarts its hide timer. Ignored while the panel is expanded, except
+    /// for a sticky pop-up (the alarm), which closes the panel to show itself.
     func showHUD(_ kind: HUDKind, level: Double) {
+        if kind.isSticky {
+            stickyHUD = kind
+            hudHideTask?.cancel()
+            page = .main
+            mode = .hud(kind: kind, level: 0)
+            return
+        }
         guard !mode.isExpanded else { return }
         mode = .hud(kind: kind, level: min(max(level, 0), 1))
 
@@ -183,7 +231,7 @@ final class NotchState {
         hudHideTask = Task { [weak self] in
             try? await Task.sleep(for: hudDuration)
             guard !Task.isCancelled, let self, self.mode.isHUD else { return }
-            self.mode = .idle
+            self.mode = self.restingMode
         }
     }
 

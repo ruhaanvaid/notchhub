@@ -44,7 +44,8 @@ struct NotchRootView: View {
                     kind: kind,
                     level: level,
                     height: geometry.notchSize.height,
-                    hasCamera: geometry.hasHardwareNotch
+                    hasCamera: geometry.hasHardwareNotch,
+                    onAction: { state.hudAction($0) }
                 )
                 .contentShape(Rectangle())
                 .onTapGesture { state.hudTapped() }

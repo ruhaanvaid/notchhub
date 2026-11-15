@@ -35,6 +35,8 @@ final class AppSettings {
     /// Caps Lock and keyboard-language pop-ups.
     var keyboardAlerts: Bool { didSet { store(keyboardAlerts, Key.keyboardAlerts) } }
     var showTimer: Bool { didSet { store(showTimer, Key.showTimer) } }
+    /// System sound the timer's alarm rings with (a name in /System/Library/Sounds).
+    var timerSound: String { didSet { store(timerSound, Key.timerSound) } }
     /// Pop-ups when AI tools need input or finish (via the notchhub-alert helper).
     var aiAlerts: Bool { didSet { store(aiAlerts, Key.aiAlerts) } }
     /// A soft sound when an AI tool needs input.
@@ -66,6 +68,7 @@ final class AppSettings {
         static let deviceAlerts = "deviceAlerts"
         static let keyboardAlerts = "keyboardAlerts"
         static let showTimer = "showTimer"
+        static let timerSound = "timerSound"
         static let aiAlerts = "aiAlerts"
         static let aiAlertSound = "aiAlertSound"
     }
@@ -90,6 +93,7 @@ final class AppSettings {
             Key.deviceAlerts: true,
             Key.keyboardAlerts: true,
             Key.showTimer: true,
+            Key.timerSound: "Glass",
             Key.aiAlerts: true,
             Key.aiAlertSound: true,
         ])
@@ -111,6 +115,7 @@ final class AppSettings {
         deviceAlerts = defaults.bool(forKey: Key.deviceAlerts)
         keyboardAlerts = defaults.bool(forKey: Key.keyboardAlerts)
         showTimer = defaults.bool(forKey: Key.showTimer)
+        timerSound = defaults.string(forKey: Key.timerSound) ?? "Glass"
         aiAlerts = defaults.bool(forKey: Key.aiAlerts)
         aiAlertSound = defaults.bool(forKey: Key.aiAlertSound)
     }
