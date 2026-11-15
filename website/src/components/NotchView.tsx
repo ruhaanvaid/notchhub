@@ -5,6 +5,7 @@ import { site } from "@/config/site";
 import {
   BackwardIcon,
   BatteryIcon,
+  AlarmIcon,
   BellIcon,
   CapsLockIcon,
   ChevronDownIcon,
@@ -47,7 +48,7 @@ export type Wheels = Record<TimerUnit, number>;
 
 export const VOLUME_STEPS = 16;
 
-export type PopupKind = "charging" | "lowBattery" | "headphones" | "capsLock" | "keyboard" | "timerDone";
+export type PopupKind = "charging" | "lowBattery" | "headphones" | "capsLock" | "keyboard" | "timerAlarm";
 
 export type Popup = {
   kind: PopupKind;
@@ -100,6 +101,9 @@ export type NotchActions = {
   onTimerCancel: () => void;
   onTimerPause: () => void;
   onWheel: (unit: TimerUnit, value: number) => void;
+  /** The timer alarm pop-up's buttons (0.9). */
+  onAlarmStop: () => void;
+  onAlarmRepeat: () => void;
   onAwake: () => void;
   onDnd: () => void;
 };
@@ -189,7 +193,7 @@ export function NotchView({
             </Layer>
 
             <Layer active={mode === "popup"} width={340} height={70}>
-              <PopupRow popup={data.popup} />
+              <PopupRow popup={data.popup} actions={actions} />
             </Layer>
 
             <Layer active={mode === "ai"} width={390} height={88}>
@@ -561,7 +565,7 @@ function HudRow({ kind, level }: { kind: "volume" | "brightness"; level: number 
 }
 
 /** Charging, low battery, headphones, Caps Lock, keyboard and timer pop-ups (NotchHUDView). */
-function PopupRow({ popup }: { popup: Popup }) {
+function PopupRow({ popup, actions }: { popup: Popup; actions?: NotchActions }) {
   const label = (text: string) => (
     <span
       style={{
@@ -626,15 +630,54 @@ function PopupRow({ popup }: { popup: Popup }) {
           {value("Keyboard")}
         </DropRow>
       );
-    case "timerDone":
+    case "timerAlarm":
+      // Rings until Stop or Repeat (0.9): a wiggling alarm, "Timer", and two capsule buttons.
       return (
         <DropRow>
-          {hudIcon(<TimerIcon size={pt(17)} style={{ color: ORANGE }} />)}
-          {label("Timer done")}
-          {value("00:00")}
+          {hudIcon(<AlarmIcon size={pt(17)} className="n-ringing" style={{ color: ORANGE }} />)}
+          {label("Timer")}
+          <AlarmButton actions={actions} onClick={actions?.onAlarmRepeat} label="Repeat" tint="#fff" fill="rgb(255 255 255 / 0.14)" />
+          <AlarmButton actions={actions} onClick={actions?.onAlarmStop} label="Stop" tint="#000" fill={ORANGE} />
         </DropRow>
       );
   }
+}
+
+/** Capsule button in the alarm pop-up (AlarmButton). */
+function AlarmButton({
+  actions,
+  onClick,
+  label,
+  tint,
+  fill,
+}: {
+  actions?: NotchActions;
+  onClick?: () => void;
+  label: string;
+  tint: string;
+  fill: string;
+}) {
+  const style: CSSProperties = {
+    flex: "none",
+    display: "grid",
+    placeItems: "center",
+    height: pt(24),
+    padding: `0 ${pt(12)}`,
+    borderRadius: 999,
+    background: fill,
+    color: tint,
+    fontSize: pt(12),
+    fontWeight: 600,
+    whiteSpace: "nowrap",
+  };
+  if (actions && onClick) {
+    return (
+      <button type="button" onClick={onClick} style={{ ...style, cursor: "pointer" }}>
+        {label}
+      </button>
+    );
+  }
+  return <span style={style}>{label}</span>;
 }
 
 /** The two-line AI alert pop-up (AIAlertRow): tool icon, who and what, and a status badge. */
@@ -848,6 +891,13 @@ function WheelColumn({
     let carry = 0;
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
+      // A mouse-wheel click (a big jump, or line-based scrolling) moves exactly one row, as in
+      // 0.8.1; trackpad scrolling adds up and moves a row every 28px.
+      if (e.deltaMode !== 0 || Math.abs(e.deltaY) >= 50) {
+        carry = 0;
+        latest.current.set(latest.current.value + Math.sign(e.deltaY));
+        return;
+      }
       carry += e.deltaY;
       const steps = Math.trunc(carry / 28);
       if (steps !== 0) {

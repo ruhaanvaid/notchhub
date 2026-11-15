@@ -4,7 +4,7 @@
  */
 
 /** Current release. Bump this when you publish a new GitHub release; the download link follows it. */
-const version = "0.8.0";
+const version = "0.9.0";
 const repo = "https://github.com/ruhaanvaid/notchhub";
 
 export const site = {
@@ -74,7 +74,7 @@ export const site = {
       {
         icon: "controls",
         title: "Quick controls",
-        body: "Play, pause, skip and drag to seek in Music, Spotify, or YouTube and Netflix in your browser. Set a clock-style timer you can pause, switch audio output, keep your Mac awake, or turn on Do Not Disturb.",
+        body: "Play, pause, skip and drag to seek in Music, Spotify, or YouTube and Netflix in your browser. Set a clock-style timer you can pause, with an alarm that rings until you stop it. Switch audio output, keep your Mac awake, or turn on Do Not Disturb.",
       },
       {
         icon: "motion",
@@ -89,7 +89,7 @@ export const site = {
       {
         icon: "sliders",
         title: "Yours to tune",
-        body: "Show or hide each section, choose which overlays to replace, and set how long the HUD stays on screen.",
+        body: "Show or hide each section, choose which overlays to replace, pick the alarm sound, and set how long the HUD stays on screen.",
       },
     ] as Feature[],
     /** Smaller extras listed under the grid. */
@@ -150,7 +150,7 @@ export const site = {
       volume: "Press the keys. On your Mac, these are the volume keys on your keyboard.",
       brightness: "Press the keys. On your Mac, these are the brightness keys on your keyboard.",
       popups: "Trigger a pop-up. On your Mac, these appear on their own when something changes, including alerts from Claude Code, Codex and other AI tools.",
-      timer: "Spin the wheels and press Start, then pause or cancel from the ring. On your Mac, the countdown also sits beside the closed notch, and a sound plays when it's done.",
+      timer: "Spin the wheels (try a few seconds) and press Start, then pause or cancel from the ring. When it ends, the alarm pop-up stays until you press Stop or Repeat. On your Mac, the alarm sound repeats until then, and the countdown also sits beside the closed notch.",
       shelf: "On your Mac, drag files onto the notch to park them here, and drag them out to drop them anywhere.",
     },
   },

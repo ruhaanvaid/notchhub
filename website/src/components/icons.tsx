@@ -381,6 +381,18 @@ export function SparklesIcon(p: IconProps) {
   );
 }
 
+export function AlarmIcon(p: IconProps) {
+  return (
+    <Svg {...p}>
+      <circle cx="12" cy="13" r="7.6" />
+      <path d="M12 9v4.4l2.6 1.6" stroke="#000" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+      <path d="M2.8 7.2a4.6 4.6 0 0 1 4.4-4.4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" fill="none" />
+      <path d="M21.2 7.2a4.6 4.6 0 0 0-4.4-4.4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" fill="none" />
+      <path d="m6.6 20.6 1.3-1.6M17.4 20.6l-1.3-1.6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </Svg>
+  );
+}
+
 export function BellIcon(p: IconProps) {
   return (
     <Svg {...p}>

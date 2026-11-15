@@ -19,7 +19,8 @@ const TABS: Tab[] = ["playing", "volume", "brightness", "popups", "timer", "shel
 const clamp = (n: number) => Math.min(Math.max(n, 0), 1);
 
 type State = Omit<NotchData, "mode"> & {
-  timerDone: boolean;
+  /** The alarm is ringing (0.9): until Stop or Repeat, or two minutes. */
+  alarm: boolean;
   /** The AI alert shown in the Pop-ups tab, or null for the other pop-ups. */
   aiAlert: number | null;
 };
@@ -40,7 +41,7 @@ export function InteractiveDemo() {
     timer: null,
     timerTotal: 0,
     timerPaused: false,
-    timerDone: false,
+    alarm: false,
     wheels: { ...site.sample.timerStart },
     popup: { kind: "charging", level: 0.8 },
     alert: 0,
@@ -54,7 +55,7 @@ export function InteractiveDemo() {
   const playing = data.playing;
   const timerActive = data.timer !== null;
   const timerTicking = timerActive && !data.timerPaused;
-  const timerDone = data.timerDone;
+  const alarm = data.alarm;
 
   // Playback position advances while playing; at the end, the next track starts.
   useEffect(() => {
@@ -75,19 +76,19 @@ export function InteractiveDemo() {
     const id = window.setInterval(() => {
       setData((d) => {
         if (d.timer === null || d.timerPaused) return d;
-        if (d.timer <= 1) return { ...d, timer: null, timerDone: true };
+        if (d.timer <= 1) return { ...d, timer: null, alarm: true };
         return { ...d, timer: d.timer - 1 };
       });
     }, 1000);
     return () => clearInterval(id);
   }, [timerTicking]);
 
-  // The "Timer done" pop-up stays up for 4 seconds, as in the app.
+  // The alarm rings until Stop or Repeat, or stops by itself after two minutes, as in the app.
   useEffect(() => {
-    if (!timerDone) return;
-    const id = window.setTimeout(() => setData((d) => ({ ...d, timerDone: false })), 4000);
+    if (!alarm) return;
+    const id = window.setTimeout(() => setData((d) => ({ ...d, alarm: false })), 2 * 60 * 1000);
     return () => clearTimeout(id);
-  }, [timerDone]);
+  }, [alarm]);
 
   const actions: NotchActions = {
     onPlayPause: () => setData((d) => ({ ...d, playing: !d.playing })),
@@ -102,8 +103,11 @@ export function InteractiveDemo() {
     onTimerStart: () =>
       setData((d) => {
         const total = d.wheels.hours * 3600 + d.wheels.minutes * 60 + d.wheels.seconds;
-        return total > 0 ? { ...d, timer: total, timerTotal: total, timerPaused: false, timerDone: false } : d;
+        return total > 0 ? { ...d, timer: total, timerTotal: total, timerPaused: false, alarm: false } : d;
       }),
+    onAlarmStop: () => set({ alarm: false }),
+    // Repeat runs the same length again.
+    onAlarmRepeat: () => setData((d) => ({ ...d, alarm: false, timer: d.timerTotal, timerPaused: false })),
     // Cancel stops a running timer; on the wheels it closes the page, like the app.
     onTimerCancel: () => (timerActive ? set({ timer: null, timerPaused: false }) : setTab("playing")),
     onTimerPause: () => setData((d) => ({ ...d, timerPaused: !d.timerPaused })),
@@ -161,11 +165,11 @@ export function InteractiveDemo() {
         ? "ai"
         : "popup"
       : tab === "timer"
-        ? timerDone
+        ? alarm
           ? "popup"
           : "timerPage"
         : tab;
-  const shownPopup: Popup = tab === "timer" ? { kind: "timerDone" } : data.popup;
+  const shownPopup: Popup = tab === "timer" ? { kind: "timerAlarm" } : data.popup;
   const alert = data.aiAlert ?? 0;
 
   const level = data.muted ? 0 : data.volume;
@@ -263,7 +267,7 @@ export function InteractiveDemo() {
             {tab === "brightness" && `Brightness ${Math.round(data.brightness * VOLUME_STEPS)} of ${VOLUME_STEPS}`}
             {tab === "popups" && (data.aiAlert !== null ? aiText(data.aiAlert) : popupText(data.popup))}
             {tab === "timer" &&
-              (timerDone ? "Timer done" : timerActive ? (data.timerPaused ? "Timer paused" : "Timer running") : "")}
+              (alarm ? "Timer done. Alarm ringing" : timerActive ? (data.timerPaused ? "Timer paused" : "Timer running") : "")}
           </p>
         </div>
       </div>
@@ -289,7 +293,7 @@ function popupText(p: Popup) {
       return `Caps Lock ${p.on ? "on" : "off"}`;
     case "keyboard":
       return `Keyboard: ${p.name}`;
-    case "timerDone":
+    case "timerAlarm":
       return "Timer done";
   }
 }

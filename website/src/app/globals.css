@@ -596,6 +596,32 @@ button.n-btn:active {
   transition: width 0.15s ease-out;
 }
 
+/* The alarm icon shakes like a ringing clock, in bursts (RingingEffect: .wiggle). */
+.n-ringing {
+  transform-origin: 50% 40%;
+  animation: n-ring 1.1s ease-in-out infinite;
+}
+
+@keyframes n-ring {
+  0%,
+  45%,
+  100% {
+    transform: rotate(0);
+  }
+  5%,
+  15%,
+  25%,
+  35% {
+    transform: rotate(-14deg);
+  }
+  10%,
+  20%,
+  30%,
+  40% {
+    transform: rotate(14deg);
+  }
+}
+
 /* Audio bars in the live-activity wing: four bars bouncing out of phase. */
 .n-bars {
   display: flex;
