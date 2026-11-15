@@ -388,9 +388,23 @@ body {
 
 .notch[data-mode="playing"] {
   --w: 420;
-  --h: 178;
+  --h: 144;
   --br: 30;
   --tr: calc(12 * var(--u));
+}
+
+.notch[data-mode="timerPage"] {
+  --w: 420;
+  --h: 170;
+  --br: 30;
+  --tr: calc(12 * var(--u));
+}
+
+.notch[data-mode="ai"] {
+  --w: 390;
+  --h: 88;
+  --br: 22;
+  --tr: calc(8 * var(--u));
 }
 
 .notch[data-mode="shelf"] {

@@ -3,7 +3,7 @@ import Image from "next/image";
 import { site } from "@/config/site";
 import { HeroDemo } from "./HeroDemo";
 import { InteractiveDemo } from "./InteractiveDemo";
-import { CupIcon, FeatureGlyph, GitHubIcon, MoonIcon, PauseIcon, PlusIcon, TimerIcon } from "./icons";
+import { CupIcon, FeatureGlyph, GitHubIcon, MoonIcon, PauseIcon, PlusIcon, SparklesIcon, TimerIcon } from "./icons";
 import { Container, DownloadButton, Requirements, SectionHeading } from "./ui";
 
 /* ---------------- Nav ---------------- */
@@ -89,7 +89,7 @@ export function Hero() {
 
 export function Features() {
   const { features } = site;
-  const [island, volume, controls, motion, native, sliders] = features.items;
+  const [island, volume, ai, controls, motion, native, sliders] = features.items;
   return (
     <section id="features" aria-labelledby="features-title" className="relative py-20 md:py-32">
       <Container>
@@ -108,21 +108,24 @@ export function Features() {
           <FeatureCard feature={volume} delay={1}>
             <MiniVolume />
           </FeatureCard>
-          <FeatureCard feature={controls} delay={0}>
+          <FeatureCard feature={ai} className="md:col-span-2" delay={0}>
+            <MiniAlert />
+          </FeatureCard>
+          <FeatureCard feature={controls} delay={1}>
             <MiniControls />
           </FeatureCard>
-          <FeatureCard feature={motion} delay={1}>
+          <FeatureCard feature={motion} delay={0}>
             <MiniMotion />
           </FeatureCard>
-          <FeatureCard feature={native} delay={2}>
+          <FeatureCard feature={native} delay={1}>
             <MiniNative />
           </FeatureCard>
-          <FeatureCard feature={sliders} delay={0}>
+          <FeatureCard feature={sliders} delay={2}>
             <MiniSettings />
           </FeatureCard>
-          <li className="card p-6 sm:p-8 md:col-span-2" data-reveal style={{ ["--reveal-delay" as string]: 1 }}>
+          <li className="card p-6 sm:p-8 md:col-span-3" data-reveal>
             <h3 className="text-sm font-semibold uppercase tracking-[0.14em] text-muted">Also included</h3>
-            <dl className="mt-5 grid gap-x-8 gap-y-5 sm:grid-cols-2">
+            <dl className="mt-5 grid gap-x-8 gap-y-5 sm:grid-cols-2 lg:grid-cols-4">
               {features.extras.map((x) => (
                 <div key={x.title}>
                   <dt className="font-semibold text-ink">{x.title}</dt>
@@ -209,11 +212,39 @@ function MiniIsland() {
             <span className="h-2.5 w-2.5 rounded-full bg-white/70" />
           </div>
         </div>
-        <div className="mt-4 flex gap-[3px]">
-          {Array.from({ length: 16 }, (_, i) => (
-            <span key={i} className={`h-2 flex-1 rounded-[2px] ${i < 10 ? "bg-white" : "bg-white/15"}`} />
-          ))}
+        {/* Track progress: elapsed, bar, remaining (the panel has no volume row since 0.7.1). */}
+        <div className="mt-4 flex items-center gap-2 text-[0.625rem] font-medium tabular-nums text-white/55">
+          <span>1:24</span>
+          <span className="relative h-1 flex-1 rounded-full bg-white/15">
+            <span className="absolute inset-y-0 left-0 w-[39%] rounded-full bg-white" />
+          </span>
+          <span>-2:12</span>
         </div>
+      </div>
+    </div>
+  );
+}
+
+/** A Claude Code alert dropping out of the notch, for the AI alerts card. */
+function MiniAlert() {
+  const a = site.sample.aiAlerts[0];
+  return (
+    <div
+      aria-hidden="true"
+      className="relative flex h-full min-h-40 justify-center overflow-hidden rounded-2xl bg-gradient-to-b from-[#1b1f45] to-[#141029] ring-1 ring-line sm:min-h-48"
+    >
+      <div className="absolute inset-x-0 top-0 h-6 bg-black/25" />
+      <div className="relative mt-0 flex h-fit w-[min(86%,400px)] items-center gap-3 rounded-b-[22px] bg-black px-4 pb-4 pt-9 shadow-[0_18px_40px_rgb(0_0_0/0.55)] transition-transform duration-700 ease-spring group-hover:translate-y-1">
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[9px] bg-gradient-to-br from-[#3a3a46] to-[#16161c] text-white ring-1 ring-white/10">
+          <SparklesIcon size={18} />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-xs font-semibold text-white/55">
+            {a.source} · {a.project}
+          </span>
+          <span className="block truncate text-[0.9375rem] font-semibold text-white">{a.message}</span>
+        </span>
+        <span className="shrink-0 rounded-full bg-[#ff9f0a] px-2 py-0.5 text-[0.6875rem] font-bold text-black">Needs you</span>
       </div>
     </div>
   );

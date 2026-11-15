@@ -15,11 +15,14 @@ import { SpeakerIcon, SunIcon } from "./icons";
 
 type Tab = "playing" | "volume" | "brightness" | "popups" | "timer" | "shelf";
 const TABS: Tab[] = ["playing", "volume", "brightness", "popups", "timer", "shelf"];
-const TIMER_PRESETS = [5, 10, 25];
 
 const clamp = (n: number) => Math.min(Math.max(n, 0), 1);
 
-type State = Omit<NotchData, "mode"> & { timerDone: boolean };
+type State = Omit<NotchData, "mode"> & {
+  timerDone: boolean;
+  /** The AI alert shown in the Pop-ups tab, or null for the other pop-ups. */
+  aiAlert: number | null;
+};
 
 export function InteractiveDemo() {
   const [tab, setTab] = useState<Tab>("playing");
@@ -35,8 +38,13 @@ export function InteractiveDemo() {
     awake: false,
     dnd: false,
     timer: null,
+    timerTotal: 0,
+    timerPaused: false,
     timerDone: false,
+    wheels: { ...site.sample.timerStart },
     popup: { kind: "charging", level: 0.8 },
+    alert: 0,
+    aiAlert: 0,
   });
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
@@ -44,7 +52,9 @@ export function InteractiveDemo() {
   const tracks = site.sample.tracks.length;
   const outputs = site.sample.outputs.length;
   const playing = data.playing;
-  const timerRunning = data.timer !== null;
+  const timerActive = data.timer !== null;
+  const timerTicking = timerActive && !data.timerPaused;
+  const timerDone = data.timerDone;
 
   // Playback position advances while playing; at the end, the next track starts.
   useEffect(() => {
@@ -59,20 +69,25 @@ export function InteractiveDemo() {
     return () => clearInterval(id);
   }, [playing, tracks]);
 
-  // The timer counts down in real time; at zero it shows "Timer done".
+  // The timer counts down in real time (not while paused); at zero, "Timer done" pops up.
   useEffect(() => {
-    if (!timerRunning) return;
+    if (!timerTicking) return;
     const id = window.setInterval(() => {
       setData((d) => {
-        if (d.timer === null) return d;
-        if (d.timer <= 1) return { ...d, timer: null, timerDone: true, popup: { kind: "timerDone" } };
+        if (d.timer === null || d.timerPaused) return d;
+        if (d.timer <= 1) return { ...d, timer: null, timerDone: true };
         return { ...d, timer: d.timer - 1 };
       });
     }, 1000);
     return () => clearInterval(id);
-  }, [timerRunning]);
+  }, [timerTicking]);
 
-  const startTimer = (minutes: number) => set({ timer: minutes * 60, timerDone: false });
+  // The "Timer done" pop-up stays up for 4 seconds, as in the app.
+  useEffect(() => {
+    if (!timerDone) return;
+    const id = window.setTimeout(() => setData((d) => ({ ...d, timerDone: false })), 4000);
+    return () => clearTimeout(id);
+  }, [timerDone]);
 
   const actions: NotchActions = {
     onPlayPause: () => setData((d) => ({ ...d, playing: !d.playing })),
@@ -80,10 +95,19 @@ export function InteractiveDemo() {
     onNext: () => setData((d) => ({ ...d, track: (d.track + 1) % tracks, position: 0, playing: true, favorite: false })),
     onFavorite: () => setData((d) => ({ ...d, favorite: !d.favorite })),
     onSeek: (fraction) => setData((d) => ({ ...d, position: Math.round(fraction * currentTrack(d).duration) })),
-    onVolume: (volume) => set({ volume, muted: false }),
     onMute: () => setData((d) => ({ ...d, muted: !d.muted })),
     onOutput: () => setData((d) => ({ ...d, output: (d.output + 1) % outputs })),
-    onTimer: () => (timerRunning ? set({ timer: null }) : startTimer(5)),
+    // The header's timer button opens the timer page, or closes it when it's open.
+    onTimer: () => setTab((t) => (t === "timer" ? "playing" : "timer")),
+    onTimerStart: () =>
+      setData((d) => {
+        const total = d.wheels.hours * 3600 + d.wheels.minutes * 60 + d.wheels.seconds;
+        return total > 0 ? { ...d, timer: total, timerTotal: total, timerPaused: false, timerDone: false } : d;
+      }),
+    // Cancel stops a running timer; on the wheels it closes the page, like the app.
+    onTimerCancel: () => (timerActive ? set({ timer: null, timerPaused: false }) : setTab("playing")),
+    onTimerPause: () => setData((d) => ({ ...d, timerPaused: !d.timerPaused })),
+    onWheel: (unit, value) => setData((d) => ({ ...d, wheels: { ...d.wheels, [unit]: value } })),
     onAwake: () => setData((d) => ({ ...d, awake: !d.awake })),
     onDnd: () => setData((d) => ({ ...d, dnd: !d.dnd })),
   };
@@ -98,6 +122,10 @@ export function InteractiveDemo() {
     setData((d) => ({ ...d, brightness: clamp(Math.round(d.brightness * VOLUME_STEPS + delta) / VOLUME_STEPS) }));
 
   const keyboards = site.sample.keyboards;
+  const aiButtons = site.sample.aiAlerts.map((a, i) => ({
+    label: `${a.source}: ${{ needs: "needs you", done: "done", error: "error" }[a.kind]}`,
+    index: i,
+  }));
   const popupButtons: { label: string; popup: (current: Popup) => Popup }[] = [
     { label: "Plug in charger", popup: () => ({ kind: "charging", level: 0.8 }) },
     { label: "Low battery", popup: () => ({ kind: "lowBattery", level: 0.2 }) },
@@ -129,15 +157,16 @@ export function InteractiveDemo() {
 
   const mode: NotchMode =
     tab === "popups"
-      ? "popup"
+      ? data.aiAlert !== null
+        ? "ai"
+        : "popup"
       : tab === "timer"
-        ? timerRunning
-          ? "timer"
-          : data.timerDone
-            ? "popup"
-            : "idle"
+        ? timerDone
+          ? "popup"
+          : "timerPage"
         : tab;
   const shownPopup: Popup = tab === "timer" ? { kind: "timerDone" } : data.popup;
+  const alert = data.aiAlert ?? 0;
 
   const level = data.muted ? 0 : data.volume;
 
@@ -177,9 +206,9 @@ export function InteractiveDemo() {
       <div id="demo-panel" role="tabpanel" aria-labelledby={`demo-tab-${tab}`}>
         <div className="mx-auto max-w-[880px]">
           <NotchView
-            data={{ ...data, popup: shownPopup, mode }}
+            data={{ ...data, popup: shownPopup, alert, mode }}
             actions={actions}
-            displayHeight={tab === "playing" ? 270 : 200}
+            displayHeight={tab === "playing" || tab === "timer" ? 250 : 200}
           />
         </div>
 
@@ -208,35 +237,44 @@ export function InteractiveDemo() {
             </div>
           )}
           {tab === "popups" && (
-            <div className="flex max-w-xl flex-wrap justify-center gap-2">
-              {popupButtons.map((b) => (
-                <DemoButton key={b.label} onClick={() => setData((d) => ({ ...d, popup: b.popup(d.popup) }))}>
-                  {b.label}
-                </DemoButton>
-              ))}
-            </div>
-          )}
-          {tab === "timer" && (
-            <div className="flex flex-wrap justify-center gap-2">
-              {TIMER_PRESETS.map((m) => (
-                <DemoButton key={m} onClick={() => startTimer(m)}>
-                  {m} minutes
-                </DemoButton>
-              ))}
-              {timerRunning && <DemoButton onClick={() => set({ timer: null })}>Cancel timer</DemoButton>}
+            <div className="flex max-w-2xl flex-col items-center gap-3">
+              <div className="flex flex-wrap justify-center gap-2">
+                {aiButtons.map((b) => (
+                  <DemoButton key={b.label} onClick={() => set({ aiAlert: b.index })}>
+                    {b.label}
+                  </DemoButton>
+                ))}
+              </div>
+              <div className="flex flex-wrap justify-center gap-2">
+                {popupButtons.map((b) => (
+                  <DemoButton
+                    key={b.label}
+                    onClick={() => setData((d) => ({ ...d, aiAlert: null, popup: b.popup(d.popup) }))}
+                  >
+                    {b.label}
+                  </DemoButton>
+                ))}
+              </div>
             </div>
           )}
           <p className="max-w-md text-sm text-muted">{site.demo.hints[tab]}</p>
           <p className="sr-only" aria-live="polite">
             {tab === "volume" && `Volume ${Math.round(level * VOLUME_STEPS)} of ${VOLUME_STEPS}`}
             {tab === "brightness" && `Brightness ${Math.round(data.brightness * VOLUME_STEPS)} of ${VOLUME_STEPS}`}
-            {tab === "popups" && popupText(data.popup)}
-            {tab === "timer" && (timerRunning ? "Timer started" : data.timerDone ? "Timer done" : "")}
+            {tab === "popups" && (data.aiAlert !== null ? aiText(data.aiAlert) : popupText(data.popup))}
+            {tab === "timer" &&
+              (timerDone ? "Timer done" : timerActive ? (data.timerPaused ? "Timer paused" : "Timer running") : "")}
           </p>
         </div>
       </div>
     </div>
   );
+}
+
+function aiText(index: number) {
+  const a = site.sample.aiAlerts[index];
+  const badge = { needs: "needs you", done: "done", error: "error" }[a.kind];
+  return `${a.source}, ${a.project}: ${a.message}. ${badge}`;
 }
 
 function popupText(p: Popup) {

@@ -32,20 +32,17 @@ const SEQUENCE: Step[] = [
       [1140, { volume: v(12) }],
     ],
   },
-  {
-    mode: "popup",
-    ms: 2400,
-    keys: [
-      [0, { popup: { kind: "charging", level: 0.8 } }],
-      [900, { popup: { kind: "charging", level: 0.81 } }],
-    ],
-  },
-  { mode: "timer", ms: 3000, keys: ticks(25 * 60 - 1, 3) },
+  { mode: "ai", ms: 2800, keys: [[0, { alert: 0 }]] },
+  { mode: "timerPage", ms: 3200, keys: ticks(25 * 60, 4) },
+  { mode: "timer", ms: 2000, keys: ticks(25 * 60 - 4, 2) },
   { mode: "shelf", ms: 3200 },
   { mode: "live", ms: 300 },
 ];
 
-const LABEL_MODES = ["live", "playing", "volume", "popup", "timer", "shelf"] as const;
+const LABEL_MODES = ["live", "playing", "volume", "ai", "timer", "shelf"] as const;
+
+/** Which label lights up for a mode (the timer page and the countdown wings are both "Timer"). */
+const labelOf = (mode: NotchMode) => (mode === "timerPage" ? "timer" : mode);
 
 const INITIAL: NotchData = {
   mode: "live",
@@ -60,7 +57,11 @@ const INITIAL: NotchData = {
   awake: true,
   dnd: false,
   timer: null,
+  timerTotal: 25 * 60,
+  timerPaused: false,
+  wheels: { hours: 0, minutes: 25, seconds: 0 },
   popup: { kind: "charging", level: 0.8 },
+  alert: 0,
 };
 
 export function HeroDemo() {
@@ -135,12 +136,12 @@ export function HeroDemo() {
           <li
             key={mode}
             className={`flex items-center gap-1.5 transition-colors duration-300 ${
-              shown.mode === mode ? "text-ink" : ""
+              labelOf(shown.mode) === mode ? "text-ink" : ""
             }`}
           >
             <span
               className={`h-1.5 w-1.5 rounded-full transition-colors duration-300 ${
-                shown.mode === mode ? "bg-accent-1" : "bg-white/20"
+                labelOf(shown.mode) === mode ? "bg-accent-1" : "bg-white/20"
               }`}
             />
             {site.demo.heroLabels[mode]}

@@ -234,6 +234,13 @@ export function FeatureGlyph({ name, ...p }: IconProps & { name: FeatureIcon }) 
           <path d="M8 21h8" {...line} />
         </Svg>
       );
+    case "ai":
+      return (
+        <Svg {...p} fill="none">
+          <path d="M5 3.5h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-6l-4.5 3.8v-3.8H5a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2Z" {...line} />
+          <path d="M12 6.5c.3 1.9 1.1 2.8 3 3.2-1.9.4-2.7 1.3-3 3.2-.3-1.9-1.1-2.8-3-3.2 1.9-.4 2.7-1.3 3-3.2Z" fill="currentColor" />
+        </Svg>
+      );
     case "volume":
       return (
         <Svg {...p} fill="none">
@@ -360,6 +367,25 @@ export function GlobeIcon(p: IconProps) {
     <Svg {...p} fill="none">
       <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
       <path d="M3 12h18M12 3c2.6 2.6 3.8 5.6 3.8 9s-1.2 6.4-3.8 9c-2.6-2.6-3.8-5.6-3.8-9S9.4 5.6 12 3Z" stroke="currentColor" strokeWidth="1.8" />
+    </Svg>
+  );
+}
+
+export function SparklesIcon(p: IconProps) {
+  return (
+    <Svg {...p}>
+      <path d="M10 2.5c.4 3.9 2.1 6.1 6.5 7-4.4.9-6.1 3.1-6.5 7-.4-3.9-2.1-6.1-6.5-7 4.4-.9 6.1-3.1 6.5-7Z" />
+      <path d="M18 13c.2 2.1 1.1 3.2 3.5 3.7-2.4.5-3.3 1.6-3.5 3.8-.2-2.2-1.1-3.3-3.5-3.8 2.4-.5 3.3-1.6 3.5-3.7Z" />
+      <path d="M18.5 2.5c.1 1.3.7 2 2 2.3-1.3.3-1.9 1-2 2.3-.1-1.3-.7-2-2-2.3 1.3-.3 1.9-1 2-2.3Z" />
+    </Svg>
+  );
+}
+
+export function BellIcon(p: IconProps) {
+  return (
+    <Svg {...p}>
+      <path d="M12 2.5a1.4 1.4 0 0 1 1.4 1.4v.5a6.2 6.2 0 0 1 4.8 6v4.3l1.9 2.3c.5.6.1 1.5-.7 1.5H4.6c-.8 0-1.2-.9-.7-1.5l1.9-2.3v-4.3a6.2 6.2 0 0 1 4.8-6v-.5A1.4 1.4 0 0 1 12 2.5Z" />
+      <path d="M9.4 19.8h5.2a2.6 2.6 0 0 1-5.2 0Z" />
     </Svg>
   );
 }

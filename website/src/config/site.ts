@@ -4,7 +4,7 @@
  */
 
 /** Current release. Bump this when you publish a new GitHub release; the download link follows it. */
-const version = "0.6.0";
+const version = "0.8.0";
 const repo = "https://github.com/ruhaanvaid/notchhub";
 
 export const site = {
@@ -14,7 +14,7 @@ export const site = {
   /** Current release, shown near the download buttons (set at the top of this file). */
   version,
   /** Download size of the release zip, shown in "How it works". Set to "" to hide. */
-  downloadSize: "1.5 MB",
+  downloadSize: "1.7 MB",
   /** Every Download button: the release zip itself, so clicking starts the download. */
   downloadUrl: `${repo}/releases/download/v${version}/NotchHub-${version}.zip`,
   githubUrl: repo,
@@ -43,11 +43,11 @@ export const site = {
     /** The word in `emphasis` is set in italic with the accent gradient. */
     headline: { before: "Your notch,", emphasis: "finally", after: "useful." },
     subhead:
-      "NotchHub turns the notch into a Dynamic Island-style panel for your music, volume, timers and quick toggles, and puts a cleaner volume HUD right where you're already looking.",
+      "NotchHub turns the notch into a Dynamic Island-style panel for your music, timers and quick toggles. Volume, pop-ups and alerts from your AI coding tools drop out of it, right where you're already looking.",
     primaryCta: "Download for Mac",
     secondaryCta: "See features",
     demoLabel:
-      "Animated demo: album art and audio bars sit beside the MacBook notch, which expands to show what's playing, then a volume HUD, a charging pop-up, a timer countdown and a shelf of files.",
+      "Animated demo: album art and audio bars sit beside the MacBook notch, which expands to show what's playing, then a volume HUD, an alert that Claude Code needs input, a timer counting down and a shelf of files.",
   },
 
   features: {
@@ -67,9 +67,14 @@ export const site = {
         body: "Press a volume or brightness key and a HUD drops out of the notch instead of the middle of your screen, on Apple's 16-step scale. Pop-ups for charging, low battery, headphones, Caps Lock and keyboard language appear in the same spot.",
       },
       {
+        icon: "ai",
+        title: "Know when your AI needs you",
+        body: "Claude Code, Codex and other AI coding tools can tell the notch when they need your input or finish a task. Click the alert to jump straight back to that app. Alerts stay on your Mac.",
+      },
+      {
         icon: "controls",
         title: "Quick controls",
-        body: "Play, pause, skip and drag to seek in Music, Spotify, or YouTube and Netflix in your browser. Start a 5, 10 or 25-minute timer, switch audio output, keep your Mac awake, or turn on Do Not Disturb.",
+        body: "Play, pause, skip and drag to seek in Music, Spotify, or YouTube and Netflix in your browser. Set a clock-style timer you can pause, switch audio output, keep your Mac awake, or turn on Do Not Disturb.",
       },
       {
         icon: "motion",
@@ -136,16 +141,16 @@ export const site = {
       live: "Live activity",
       playing: "Now playing",
       volume: "Volume",
-      popup: "Pop-ups",
+      ai: "AI alerts",
       timer: "Timer",
       shelf: "File shelf",
     },
     hints: {
-      playing: "Try play, skip, the heart, the progress bar, the volume squares, the output menu and the toggles.",
+      playing: "Try play, skip, the heart, the progress bar, the output menu and the toggles. Volume lives in its own pop-up now: see the Volume tab.",
       volume: "Press the keys. On your Mac, these are the volume keys on your keyboard.",
       brightness: "Press the keys. On your Mac, these are the brightness keys on your keyboard.",
-      popups: "Trigger a pop-up. On your Mac, these appear on their own when something changes.",
-      timer: "Pick a preset. While it runs, the countdown sits beside the closed notch, and a sound plays when it's done.",
+      popups: "Trigger a pop-up. On your Mac, these appear on their own when something changes, including alerts from Claude Code, Codex and other AI tools.",
+      timer: "Spin the wheels and press Start, then pause or cancel from the ring. On your Mac, the countdown also sits beside the closed notch, and a sound plays when it's done.",
       shelf: "On your Mac, drag files onto the notch to park them here, and drag them out to drop them anywhere.",
     },
   },
@@ -170,6 +175,10 @@ export const site = {
       {
         q: "What permissions does it need, and why?",
         a: "Accessibility, so it can catch the volume and brightness keys and notice Caps Lock; every other key passes straight through. Automation for Music, Spotify and your browser, so it can show what's playing and control playback. Everything except the HUD works without Accessibility. There are no accounts or analytics. NotchHub checks GitHub once a day for updates (you can turn this off), loads site icons for browser media, and sends only a song's title and artist to Apple's iTunes Search to find album art.",
+      },
+      {
+        q: "How do AI alerts work?",
+        a: "In Settings › AI Alerts, Connect Claude Code adds two hooks to its settings, so NotchHub pops up when Claude needs your input or finishes. Codex and any other tool with hooks or a \"run a command when done\" option can call NotchHub's bundled helper the same way. Everything happens on your Mac: the helper only opens a notchhub:// link, and nothing is sent anywhere. Chat apps without hooks, like ChatGPT, can't trigger alerts.",
       },
       {
         q: "Does it slow my Mac down?",
@@ -204,6 +213,14 @@ export const site = {
     /** Keyboard input sources the demo cycles through. */
     keyboards: ["ABC", "French", "Japanese"],
     headphones: "AirPods",
+    /** AI alerts: tool, project, message and kind (needs = "Needs you", done = "Done", error = "Error"). */
+    aiAlerts: [
+      { source: "Claude Code", project: "notch", message: "Waiting for your input", kind: "needs" },
+      { source: "Codex", project: "api", message: "Finished updating the tests", kind: "done" },
+      { source: "Claude Code", project: "website", message: "Build failed: 2 type errors", kind: "error" },
+    ],
+    /** Timer wheels open on this length (the app opens on the last length used). */
+    timerStart: { hours: 0, minutes: 25, seconds: 0 },
     files: [
       { name: "Report.pdf", kind: "pdf" },
       { name: "Hero.png", kind: "image" },
@@ -213,7 +230,7 @@ export const site = {
   },
 } as const;
 
-export type FeatureIcon = "island" | "volume" | "controls" | "motion" | "native" | "sliders";
+export type FeatureIcon = "island" | "volume" | "ai" | "controls" | "motion" | "native" | "sliders";
 
 export type Feature = {
   icon: FeatureIcon;
