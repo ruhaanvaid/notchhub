@@ -59,7 +59,7 @@ struct SettingsView: View {
                 Toggle("Caps Lock and keyboard language", isOn: $settings.keyboardAlerts)
                 Toggle(isOn: $settings.showTimer) {
                     Text("Timer button")
-                    Text("5, 10 or 25 minutes; the countdown shows beside the notch and a sound plays when it's done.")
+                    Text("Set hours, minutes and seconds on wheels; the countdown shows beside the notch and a sound plays when it's done.")
                 }
             }
 

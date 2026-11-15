@@ -38,6 +38,18 @@ struct LiveActivity: Equatable {
     var timerEnd: Date?
     /// Whether anything is playing (the artwork side is shown).
     var showsMedia: Bool
+    /// Time left on a paused timer (shown without counting down).
+    var timerPaused: TimeInterval? = nil
+
+    var hasTimer: Bool { timerEnd != nil || timerPaused != nil }
+}
+
+/// Which page the expanded panel shows.
+enum PanelPage: Equatable {
+    /// Now playing.
+    case main
+    /// The timer's wheels or countdown.
+    case timer
 }
 
 enum NotchMode: Equatable {
@@ -90,8 +102,20 @@ final class NotchState {
         }
     }
 
-    /// The expanded panel shows the shelf row (it has items, or a drop is incoming).
-    var showsShelf: Bool { shelfHasItems || isDropTargeted }
+    /// The expanded panel's page. Collapsing goes back to `.main`.
+    var page: PanelPage = .main {
+        didSet {
+            if page != oldValue { notifyShapeChange() }
+        }
+    }
+
+    func toggleTimerPage() {
+        page = page == .timer ? .main : .timer
+    }
+
+    /// The expanded panel shows the shelf row (it has items, or a drop is incoming). The timer
+    /// page hides it unless a file is being dragged in.
+    var showsShelf: Bool { (shelfHasItems && page == .main) || isDropTargeted }
 
     /// Height of the expanded panel below the notch band, for the sections that are enabled.
     var expandedContentHeight: CGFloat = NotchLayout.expandedContentHeight {
@@ -127,7 +151,8 @@ final class NotchState {
         geometry.map {
             NotchLayout.metrics(
                 for: mode, geometry: $0, indicator: indicatorVisible, shelf: showsShelf,
-                contentHeight: expandedContentHeight, live: live != nil
+                contentHeight: page == .timer ? NotchLayout.timerPageHeight : expandedContentHeight,
+                live: live != nil
             )
         }
     }
@@ -145,6 +170,7 @@ final class NotchState {
     func collapse() {
         hudHideTask?.cancel()
         mode = .idle
+        page = .main
     }
 
     /// Shows the HUD and restarts its hide timer. Ignored while the panel is expanded.

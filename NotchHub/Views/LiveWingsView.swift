@@ -37,7 +37,7 @@ struct LiveWingsView: View {
             .frame(width: side, height: side)
             .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
             .transition(.scale.combined(with: .opacity))
-        } else if live.timerEnd != nil {
+        } else if live.hasTimer {
             Image(systemName: "timer")
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(.orange)
@@ -52,7 +52,17 @@ struct LiveWingsView: View {
                     .font(.system(size: 12, weight: .semibold).monospacedDigit())
                     .foregroundStyle(.orange)
                     .contentTransition(.numericText(countsDown: true))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                    .padding(.horizontal, 4)
             }
+        } else if let paused = live.timerPaused {
+            Text(TimerService.format(remaining: paused))
+                .font(.system(size: 12, weight: .semibold).monospacedDigit())
+                .foregroundStyle(Color.orange.opacity(0.55))
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+                .padding(.horizontal, 4)
         } else if live.showsMedia {
             AudioBars(isPlaying: live.isPlaying, tint: live.tint.map(Color.init(nsColor:)) ?? NotchStyle.primary)
                 .frame(width: 16, height: 12)

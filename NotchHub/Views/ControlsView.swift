@@ -3,6 +3,7 @@ import SwiftUI
 /// Header row in the band beside the notch: output picker on the left, Awake and Focus
 /// toggles on the right, nothing under the camera housing.
 struct HeaderBar: View {
+    let state: NotchState
     let context: PanelContext
     /// Width of the camera housing to leave empty (0 on a pill).
     let notchWidth: CGFloat
@@ -21,7 +22,9 @@ struct HeaderBar: View {
 
             HStack(spacing: 8) {
                 if settings.showTimer {
-                    TimerMenu(timer: context.timer, size: circleSize)
+                    TimerButton(timer: context.timer, isOpen: state.page == .timer, size: circleSize) {
+                        withAnimation(.easeOut(duration: 0.2)) { state.toggleTimerPage() }
+                    }
                 }
                 if settings.showKeepAwake {
                 ToggleCircle(
@@ -127,35 +130,27 @@ private struct ToggleCircle: View {
     }
 }
 
-/// Round timer button: pick 5, 10 or 25 minutes; while running it's filled orange and
-/// offers Cancel.
-private struct TimerMenu: View {
+/// Round timer button: opens the timer page (wheels, or the countdown while one runs). Filled
+/// orange while a timer is running or paused, white while the page is open.
+private struct TimerButton: View {
     let timer: TimerService
+    let isOpen: Bool
     let size: CGFloat
+    let action: () -> Void
 
     var body: some View {
-        Menu {
-            ForEach(TimerService.presets, id: \.self) { minutes in
-                Button("\(minutes) minutes") { timer.start(minutes: minutes) }
-            }
-            if timer.isRunning {
-                Divider()
-                Button("Cancel Timer", role: .destructive) { timer.cancel() }
-            }
-        } label: {
+        Button(action: action) {
             ZStack {
-                Circle().fill(timer.isRunning ? Color.orange : NotchStyle.fillStrong)
+                Circle().fill(timer.isActive ? Color.orange : (isOpen ? NotchStyle.primary : NotchStyle.fillStrong))
                 Image(systemName: "timer")
                     .font(.system(size: size * 0.42, weight: .semibold))
-                    .foregroundStyle(timer.isRunning ? Color.black : NotchStyle.primary)
+                    .foregroundStyle(timer.isActive || isOpen ? Color.black : NotchStyle.primary)
             }
             .frame(width: size, height: size)
             .contentShape(Circle())
         }
-        .menuStyle(.button)
         .buttonStyle(.plain)
-        .menuIndicator(.hidden)
-        .fixedSize()
-        .help(timer.isRunning ? "Timer running" : "Start a timer")
+        .help(timer.isActive ? "Timer" : "Set a timer")
+        .animation(.easeOut(duration: 0.15), value: isOpen)
     }
 }

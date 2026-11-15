@@ -120,13 +120,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             let track = self.nowPlaying.track
             let showsMedia = settings.liveNowPlaying && settings.showNowPlaying && (track?.isPlaying ?? false)
             let timerEnd = settings.showTimer ? self.timer.endDate : nil
-            let live: LiveActivity? = (showsMedia || timerEnd != nil)
+            let timerPaused = settings.showTimer ? self.timer.pausedRemaining : nil
+            let live: LiveActivity? = (showsMedia || timerEnd != nil || timerPaused != nil)
                 ? LiveActivity(
                     artwork: showsMedia ? self.nowPlaying.artwork : nil,
                     tint: self.nowPlaying.artworkTint,
                     isPlaying: showsMedia,
                     timerEnd: timerEnd,
-                    showsMedia: showsMedia
+                    showsMedia: showsMedia,
+                    timerPaused: timerPaused
                 )
                 : nil
             DispatchQueue.main.async { [weak self] in self?.coordinator?.setLive(live) }

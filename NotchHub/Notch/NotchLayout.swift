@@ -47,6 +47,12 @@ enum NotchLayout {
     /// Height of the track progress row (time, bar, time) under now playing.
     static let progressRowHeight: CGFloat = 16
 
+    /// Timer page: one wheel row, and the wheels' visible height (5 rows).
+    static let timerRowHeight: CGFloat = 22
+    static let timerWheelHeight: CGFloat = timerRowHeight * 5
+    /// Content height of the timer page below the notch band.
+    static let timerPageHeight: CGFloat = 8 + timerWheelHeight + 16 + 4
+
     /// Content height for the enabled panel sections (keep in sync with ExpandedPanelView).
     static func contentHeight(nowPlaying: Bool) -> CGFloat {
         let topGap: CGFloat = 14, bottomPadding: CGFloat = 16
@@ -108,6 +114,7 @@ enum NotchLayout {
             metrics(for: .hud(kind: .aiAlert(AIAlert(source: "", kind: .done, message: "")), level: 0), geometry: geometry),
             metrics(for: .hud(kind: .volume, level: 0), geometry: geometry),
             metrics(for: .expanded, geometry: geometry, shelf: true),
+            metrics(for: .expanded, geometry: geometry, shelf: true, contentHeight: timerPageHeight),
         ].map(\.shapeSize)
         let width = shapes.map(\.width).max() ?? 0
         let height = shapes.map(\.height).max() ?? 0

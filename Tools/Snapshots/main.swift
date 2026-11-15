@@ -122,7 +122,7 @@ enum Snapshots {
                 try? png.write(to: out.appendingPathComponent("part-\(name).png")); print("wrote part", name)
             }
         }
-        renderPart("header", HeaderBar(context: context, notchWidth: 185, height: 32))
+        renderPart("header", HeaderBar(state: NotchState(), context: context, notchWidth: 185, height: 32))
         renderPart("nowplaying", NowPlayingView(service: nowPlaying))
         let youtube = NowPlayingService()
         youtube.setPreview(
@@ -162,6 +162,52 @@ enum Snapshots {
                     try? png.write(to: out.appendingPathComponent("10-settings.png")); print("wrote 10-settings")
                 }
             }
+        }
+
+        // The timer page has ScrollViews, which ImageRenderer can't draw: render it in an
+        // off-screen window instead.
+        func renderTimerPage(_ name: String, timer: TimerService) {
+            let state = NotchState()
+            state.geometry = notch
+            state.page = .timer
+            state.expand()
+            let m = state.metrics!
+            let ctx = PanelContext(nowPlaying: nowPlaying, volume: volume, outputs: outputs, power: power,
+                                   focus: focus, shelf: shelfStore, timer: timer, openSettings: {})
+            let view = ZStack(alignment: .top) {
+                NotchShape(topRadius: m.topRadius, bottomRadius: m.bottomRadius).fill(Color.black)
+                ExpandedPanelView(state: state, context: ctx, geometry: notch)
+                    .padding(.horizontal, m.topRadius + 18)
+                    .padding(.bottom, 16)
+            }
+            .frame(width: m.shapeSize.width, height: m.shapeSize.height)
+            .environment(\.colorScheme, .dark)
+            .padding(24)
+            .background(LinearGradient(colors: [Color(red: 0.16, green: 0.20, blue: 0.32), Color(red: 0.32, green: 0.22, blue: 0.36)],
+                                       startPoint: .topLeading, endPoint: .bottomTrailing))
+            let hosting = NSHostingView(rootView: view)
+            hosting.frame = NSRect(origin: .zero, size: hosting.fittingSize)
+            let window = NSWindow(contentRect: hosting.frame, styleMask: [.borderless], backing: .buffered, defer: false)
+            window.appearance = NSAppearance(named: .darkAqua)
+            window.contentView = hosting
+            for _ in 0..<30 { RunLoop.main.run(until: Date().addingTimeInterval(0.05)); hosting.layoutSubtreeIfNeeded() }
+            if let rep = hosting.bitmapImageRepForCachingDisplay(in: hosting.bounds) {
+                hosting.cacheDisplay(in: hosting.bounds, to: rep)
+                if let png = rep.representation(using: .png, properties: [:]) {
+                    try? png.write(to: out.appendingPathComponent("\(name).png")); print("wrote", name)
+                }
+            }
+        }
+        do {
+            let picker = TimerService(); picker.lastDuration = 30 * 60
+            renderTimerPage("11a-timer-wheels", timer: picker)
+            let running = TimerService(); running.start(seconds: 25 * 60)
+            renderTimerPage("11b-timer-running", timer: running)
+            let paused = TimerService(); paused.start(seconds: 90 * 60); paused.pause()
+            renderTimerPage("11c-timer-paused-hours", timer: paused)
+        }
+        render("11d-live-timer-hours", geometry: notch) {
+            $0.live = LiveActivity(artwork: nil, tint: nil, isPlaying: false, timerEnd: Date().addingTimeInterval(3600 + 5 * 60 + 9), showsMedia: false)
         }
 
         // The expanded panel without NotchRootView's insertion transition, which
