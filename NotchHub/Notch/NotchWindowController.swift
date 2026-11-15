@@ -27,6 +27,9 @@ final class NotchWindowController: NotchDropDelegate {
     private var lastInside = false
     /// A full-screen app covers this screen: stay hidden except to flash the HUD.
     private var isSuppressed = false
+    /// Scroll diagnostics are logged once per launch.
+    private var loggedScroll = false
+    private var loggedStrayScroll = false
 
     /// While true the panel must not collapse or start ignoring the mouse.
     private var isInteractionLocked: Bool {
@@ -177,6 +180,37 @@ final class NotchWindowController: NotchDropDelegate {
         }) {
             eventMonitors.append(upGlobal)
         }
+
+        // Scrolls over the panel (the timer wheels, the shelf) go straight to the scroll view
+        // under the pointer; see NotchScrollRouter.
+        if let scroll = NSEvent.addLocalMonitorForEvents(matching: .scrollWheel, handler: { [weak self] event in
+            let handled = MainActor.assumeIsolated { self?.routeScroll(event) ?? false }
+            return handled ? nil : event
+        }) {
+            eventMonitors.append(scroll)
+        }
+        // Diagnostics only: a scroll over the open panel that went to another app instead.
+        if let strayScroll = NSEvent.addGlobalMonitorForEvents(matching: .scrollWheel, handler: { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self, !self.loggedStrayScroll, self.state.mode.isExpanded,
+                      self.shapeContains(NSEvent.mouseLocation) else { return }
+                self.loggedStrayScroll = true
+                log.error("scroll over the open panel went to another app")
+            }
+        }) {
+            eventMonitors.append(strayScroll)
+        }
+    }
+
+    /// Returns true when the scroll was handed to a scroll view in the panel.
+    private func routeScroll(_ event: NSEvent) -> Bool {
+        guard let panel, event.window === panel, let root = panel.contentView else { return false }
+        let routed = NotchScrollRouter.route(event, atWindowPoint: event.locationInWindow, in: root)
+        if !loggedScroll {
+            loggedScroll = true
+            log.info("scroll over the panel: \(routed ? "sent to a scroll view" : "no scroll view there", privacy: .public)")
+        }
+        return routed
     }
 
     private func mouseReleased() {

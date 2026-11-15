@@ -108,3 +108,39 @@ final class NotchContainerView: NSView {
         dropDelegate?.notchDragExited()
     }
 }
+
+/// Scrolling over the panel. The panel is never key and NotchHub is usually not the active
+/// app, and in that state AppKit doesn't reliably hand scroll events to the SwiftUI scroll
+/// views inside it (the timer wheels didn't turn). The window controller catches scrolls over
+/// the panel and passes them here, to go straight to the scroll view under the pointer.
+@MainActor
+enum NotchScrollRouter {
+    /// Sends `event` to the scroll view at `windowPoint` in `root`'s window. Returns false when
+    /// there is no scroll view there, so the event can carry on as usual.
+    static func route(_ event: NSEvent, atWindowPoint windowPoint: NSPoint, in root: NSView) -> Bool {
+        // hitTest takes a point in the receiver's superview's coordinates.
+        let point = root.superview?.convert(windowPoint, from: nil) ?? windowPoint
+        var view = root.hitTest(point)
+        while let current = view, !(current is NSScrollView) { view = current.superview }
+        guard let scrollView = view as? NSScrollView else { return false }
+        scrollView.scrollWheel(with: scrollsVertically(scrollView) ? steppedForMouseWheel(event) : event)
+        return true
+    }
+
+    private static func scrollsVertically(_ scrollView: NSScrollView) -> Bool {
+        (scrollView.documentView?.frame.height ?? 0) > scrollView.contentView.bounds.height + 1
+    }
+
+    /// One click of a mouse wheel scrolls only a few points, which the wheels' snapping then
+    /// undoes; make each click move one whole row. Trackpads (precise deltas) are untouched.
+    static func steppedForMouseWheel(_ event: NSEvent) -> NSEvent {
+        guard !event.hasPreciseScrollingDeltas, event.scrollingDeltaY != 0,
+              let copy = event.cgEvent?.copy() else { return event }
+        let direction: Double = event.scrollingDeltaY > 0 ? 1 : -1
+        let row = Double(NotchLayout.timerRowHeight)
+        copy.setIntegerValueField(.scrollWheelEventIsContinuous, value: 1)
+        copy.setIntegerValueField(.scrollWheelEventPointDeltaAxis1, value: Int64(row * direction))
+        copy.setDoubleValueField(.scrollWheelEventFixedPtDeltaAxis1, value: row * direction)
+        return NSEvent(cgEvent: copy) ?? event
+    }
+}
